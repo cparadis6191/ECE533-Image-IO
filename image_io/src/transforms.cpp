@@ -82,8 +82,8 @@ void smooth(image_io* image_src) {
 
 
 	// Iterate through every pixel, skip the outer edges
-	for (int y = 1; y < image_src->get_image()->h - 1; y++) {
-		for (int x = 1; x < image_src->get_image()->w - 1; x++) {
+	for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
 
 
 			// Variable to hold the pixel average throughout the neighborhood

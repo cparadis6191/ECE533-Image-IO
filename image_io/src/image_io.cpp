@@ -10,8 +10,8 @@ image_io::image_io(char* filename) {
 	image = IMG_Load_RW(SDL_RWFromFile(filename, "rb"), 0);
 
 
-	// Check for an error
-	if (!image) {
+	// Returns null on an error
+	if (!(this->image)) {
 		cout << "IMG_Load_RW: " << IMG_GetError();
 
 		exit(1);
@@ -22,9 +22,13 @@ image_io::image_io(char* filename) {
 }
 
 
-// Copy construcctor
+// Copy constructor
+// Ideas taken from http://www.libsdl.org/cgi/docwiki.cgi/SDL_Surface
 image_io::image_io(image_io* image_old) {
-	image = image_old->image;
+	// Copy the surface
+	this->image = SDL_ConvertSurface(image_old->image,
+									image_old->image->format,
+									image_old->image->flags);
 
 
 	return;
@@ -42,6 +46,26 @@ image_io::~image_io() {
 
 // Returns a pointer to the image
 SDL_Surface* image_io::get_image() { return image; }
+
+
+void image_io::read(const char* filename) {
+
+
+	return;
+}
+
+
+void image_io::write(const char* filename) {
+	// Returns -1 on error
+	if (SDL_SaveBMP(this->image, filename)) {
+		cout << "IMG_SaveBMP: " << IMG_GetError();
+
+		exit(1);
+	}
+
+
+	return;
+}
 
 
 // Function taken from http://www.libsdl.org/cgi/docwiki.cgi/Pixel_Access

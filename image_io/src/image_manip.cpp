@@ -4,9 +4,18 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
+	// Do some simple error checking
+	if (argc != 3) {
+		cout << "Program requires two arguments: i_file and o_file" << endl;
+
+		exit(1);
+	}
+
+
 	// Initialize the SDL libraries
 	SDL_Init(SDL_INIT_EVERYTHING);
 
+	// Open the image
 	image_io* image = new image_io(argv[1]);
 
 	//grayscale(image);
@@ -14,11 +23,7 @@ int main(int argc, char* argv[]) {
 	smooth(image);
 
 
-	if (!SDL_SaveBMP(image->get_image(), "../inverted.bmp")) {
-		cout << "IMG_SaveBMP: " << IMG_GetError();
-
-		exit(1);
-	}
+	image->write(argv[2]);
 
 
 	// Free memory from the images
