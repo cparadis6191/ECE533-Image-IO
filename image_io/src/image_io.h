@@ -11,8 +11,9 @@
 // Class to open an instance of an image
 class image_io {
 	public:
-		// Create and image object
+		// Create an image object
 		image_io(char* filename);
+		image_io(image_io* image_new);
 		~image_io();
 
 		SDL_Surface* get_image();

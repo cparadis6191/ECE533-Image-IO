@@ -2,14 +2,10 @@
 
 
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
-void RGB_to_Grayscale(image_io* image_src, image_io* image_dst) {
+void grayscale(image_io* image_src) {
 	// Lock the image
 	if(SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_LockSurface(image_dst->get_image());
 	}
 
 
@@ -26,7 +22,7 @@ void RGB_to_Grayscale(image_io* image_src, image_io* image_dst) {
 							| (gray_value << 8)
 							| (gray_value << 16);
 
-			image_dst->put_pixel(x, y, pixel_dst);
+			image_src->put_pixel(x, y, pixel_dst);
 		}
 	}
 
@@ -35,24 +31,16 @@ void RGB_to_Grayscale(image_io* image_src, image_io* image_dst) {
 	if(SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
-	// Unlock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_UnlockSurface(image_dst->get_image());
-	}
 
 
 	return;
 }
 
 
-void invert(image_io* image_src, image_io* image_dst) {
+void invert(image_io* image_src) {
 	// Lock the image
 	if(SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_LockSurface(image_dst->get_image());
 	}
 
 
@@ -64,7 +52,7 @@ void invert(image_io* image_src, image_io* image_dst) {
 							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
 							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
 
-			image_dst->put_pixel(x, y, pixel_dst); 
+			image_src->put_pixel(x, y, pixel_dst); 
 		}
 	}
 
@@ -73,24 +61,23 @@ void invert(image_io* image_src, image_io* image_dst) {
 	if(SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
-	// Unlock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_UnlockSurface(image_dst->get_image());
-	}
 
 
 	return;
 }
 
 
-void smooth(image_io* image_src, image_io* image_dst) {
+void smooth(image_io* image_src) {
+	// Create a copy for use in algorithms
+	image_io* image_tmp = new image_io(image_src);
+
 	// Lock the image
 	if(SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
 	}
 	// Lock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_LockSurface(image_dst->get_image());
+	if(SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_LockSurface(image_tmp->get_image());
 	}
 
 
@@ -107,7 +94,7 @@ void smooth(image_io* image_src, image_io* image_dst) {
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
 				for (int v = -1; v + 1 < 3; v++) {
-					Uint32 pixel_src = image_src->get_pixel(x + u, y + v);
+					Uint32 pixel_src = image_tmp->get_pixel(x + u, y + v);
 					
 					// Iterate through the 9 pixels in the neighborhood
 					// Each has an equal weight of 1/9
@@ -123,8 +110,7 @@ void smooth(image_io* image_src, image_io* image_dst) {
 							| (G_avg/9 << 8)
 							| (B_avg/9 << 16);
 
-			image_dst->put_pixel(x, y, pixel_dst); 
-
+			image_src->put_pixel(x, y, pixel_dst); 
 		}
 	}
 
@@ -134,9 +120,12 @@ void smooth(image_io* image_src, image_io* image_dst) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_dst->get_image())) {
-		SDL_UnlockSurface(image_dst->get_image());
+	if(SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_UnlockSurface(image_tmp->get_image());
 	}
+
+	// Free the temporary memory
+	delete image_tmp;
 
 
 	return;

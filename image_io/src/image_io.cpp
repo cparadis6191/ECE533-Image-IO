@@ -4,6 +4,8 @@
 using namespace std;
 
 
+// Parameterized constructor
+// Pass it a filename to open an instance of that file
 image_io::image_io(char* filename) {
 	image = IMG_Load_RW(SDL_RWFromFile(filename, "rb"), 0);
 
@@ -20,6 +22,16 @@ image_io::image_io(char* filename) {
 }
 
 
+// Copy construcctor
+image_io::image_io(image_io* image_old) {
+	image = image_old->image;
+
+
+	return;
+}
+
+
+// Destructor
 image_io::~image_io() {
 	SDL_FreeSurface(image);
 
