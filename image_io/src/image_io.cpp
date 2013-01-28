@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_Surface *image;
-	image = IMG_Load_RW(SDL_RWFromFile("../cat.bmp", "rb"), 0);
+	image = IMG_Load_RW(SDL_RWFromFile(argv[1], "rb"), 0);
 
 
 	// Check for an error
@@ -19,12 +19,11 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	SDL_SaveBMP(image, "../test1.bmp");
-	SDL_SaveBMP(image, "../test2.bmp");
-	RGB_to_Grayscale(image);
+	//RGB_to_Grayscale(image);
+	RGB_invert(image);
 
 
-	if (!SDL_SaveBMP(image, "../test.bmp")) {
+	if (!SDL_SaveBMP(image, "../inverted.bmp")) {
 		cout << "IMG_SaveBMP: " << IMG_GetError();
 
 		return 1;
@@ -60,22 +59,30 @@ Uint32 get_pixel(SDL_Surface *surface, int x, int y) {
 	switch(bpp) {
 		case 1:
 			return *p;
+
 			break;
+
 
 		case 2:
 			return *(Uint16 *)p;
+
 			break;
+
 
 		case 3:
 			if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
 			return p[0] << 16 | p[1] << 8 | p[2];
 			else
 			return p[0] | p[1] << 8 | p[2] << 16;
+
 			break;
+
 
 		case 4:
 			return *(Uint32 *)p;
+
 			break;
+
 
 			default:
 
@@ -93,33 +100,39 @@ void put_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 	switch(bpp) {
 		case 1:
 			*p = pixel;
+
 			break;
+
 
 		case 2:
 			*(Uint16 *)p = pixel;
+
 			break;
+
 
 		case 3:
 			if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-				p[0] = (pixel >> 16) & 0xff;
-				p[1] = (pixel >> 8) & 0xff;
-				p[2] = pixel & 0xff;
-				} else {
-				p[0] = pixel & 0xff;
-				p[1] = (pixel >> 8) & 0xff;
-				p[2] = (pixel >> 16) & 0xff;
+				p[0] = (pixel >> 16) & 0xFF;
+				p[1] = (pixel >> 8) & 0xFF;
+				p[2] = pixel & 0xFF;
+			} else {
+				p[0] = pixel & 0xFF;
+				p[1] = (pixel >> 8) & 0xFF;
+				p[2] = (pixel >> 16) & 0xFF;
 			}
 
 		break;
 
+
 		case 4:
 			*(Uint32 *)p = pixel;
+
 			break;
 	}
 }
 
 
-// gray = (0.299*r + 0.587*g + 0.114*b);
+// gray_value = (0.299*r + 0.587*g + 0.114*b);
 void RGB_to_Grayscale(SDL_Surface* surface) {
 	// Lock the surface
 	if(SDL_MUSTLOCK(surface)) {
@@ -133,16 +146,46 @@ void RGB_to_Grayscale(SDL_Surface* surface) {
 		for (int x = 0; x < surface->w; x++) {
 			Uint32 pixel_src = get_pixel(surface, x, y);
 
-			int gray_value = .299*((pixel_src >> 0) & 0xff)
-								+ .587*((pixel_src >> 8) & 0xff)
-								+ .114*((pixel_src >> 16) & 0xff);
+			int gray_value = .299*((pixel_src >> 0) & 0xFF)
+								+ .587*((pixel_src >> 8) & 0xFF)
+								+ .114*((pixel_src >> 16) & 0xFF);
 
-			gray_value = 255 - gray_value;
+			Uint32 pixel_dst = (gray_value << 0)
+							| (gray_value << 8)
+							| (gray_value << 16);
+
+			put_pixel(surface, x, y, pixel_dst);
+		}
+	}
 
 
-			put_pixel(surface, x, y, gray_value
-									+ (gray_value << 8)
-									+ (gray_value << 16));
+	// Unlock the surface
+	if(SDL_MUSTLOCK(surface)) {
+		SDL_UnlockSurface(surface);
+	}
+
+
+	return;
+}
+
+
+void RGB_invert(SDL_Surface* surface) {
+	// Lock the surface
+	if(SDL_MUSTLOCK(surface)) {
+		SDL_LockSurface(surface);
+	}
+
+
+	// Iterate through every pixel
+	//image->format->BitsPerPixel
+	for (int y = 0; y < surface->h; y++) {
+		for (int x = 0; x < surface->w; x++) {
+			Uint32 pixel_src = get_pixel(surface, x, y);
+			Uint32 pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
+							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
+							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
+
+			put_pixel(surface, x, y, pixel_dst); 
 		}
 	}
 

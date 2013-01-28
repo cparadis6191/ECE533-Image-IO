@@ -1,7 +1,7 @@
 TARGET = image_io
 OBJS = image_io.o
 CXXFLAGS = -g -Wall
-LDFLAGS = -lSDLmain -lSDL -lSDL_image -lstdc++
+LDFLAGS = -lmingw32 -lSDLmain -lSDL -lSDL_image -lstdc++
 .PHONY:clean
 
 # CXX is already defined and depends on the object being made
