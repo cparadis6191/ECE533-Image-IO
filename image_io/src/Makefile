@@ -10,7 +10,7 @@ ${TARGET}:${OBJS}
 
 image_manip.o:image_manip.h
 image_io.o:image_io.h
-#transforms.o:transforms.h
+#orms.o:transforms.h
 
 # This rule must be called explicitly
 clean:

@@ -34,7 +34,7 @@ SDL_Surface* image_io::get_image() { return image; }
 Uint32 image_io::get_pixel(int x, int y) {
 	int bpp = image->format->BytesPerPixel;
 	/* Here p is the address to the pixel we want to retrieve */
-	Uint8 *p = (Uint8 *)image->pixels + y * image->pitch + x * bpp;
+	Uint8 *p = (Uint8*) image->pixels + y*image->pitch + x*bpp;
 
 	switch(bpp) {
 		case 1:
@@ -44,22 +44,22 @@ Uint32 image_io::get_pixel(int x, int y) {
 
 
 		case 2:
-			return *(Uint16 *)p;
+			return *(Uint16*) p;
 
 			break;
 
 
 		case 3:
 			if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-			return p[0] << 16 | p[1] << 8 | p[2];
+			return ((p[0] << 16) | (p[1] << 8) | p[2]);
 			else
-			return p[0] | p[1] << 8 | p[2] << 16;
+			return (p[0] | (p[1] << 8) | (p[2] << 16));
 
 			break;
 
 
 		case 4:
-			return *(Uint32 *)p;
+			return *(Uint32*) p;
 
 			break;
 
@@ -75,7 +75,7 @@ Uint32 image_io::get_pixel(int x, int y) {
 void image_io::put_pixel(int x, int y, Uint32 pixel) {
 	int bpp = image->format->BytesPerPixel;
 	/* Here p is the address to the pixel we want to set */
-	Uint8 *p = (Uint8 *)image->pixels + y * image->pitch + x * bpp;
+	Uint8 *p = (Uint8*) image->pixels + y*image->pitch + x*bpp;
 
 	switch(bpp) {
 		case 1:
@@ -85,7 +85,7 @@ void image_io::put_pixel(int x, int y, Uint32 pixel) {
 
 
 		case 2:
-			*(Uint16 *)p = pixel;
+			*(Uint16*) p = pixel;
 
 			break;
 
@@ -105,7 +105,7 @@ void image_io::put_pixel(int x, int y, Uint32 pixel) {
 
 
 		case 4:
-			*(Uint32 *)p = pixel;
+			*(Uint32*) p = pixel;
 
 			break;
 	}
