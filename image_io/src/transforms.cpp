@@ -1,22 +1,22 @@
-#ifndef _IMAGE_IO_H__
-#define _IMAGE_IO_H__
-
 #include "transforms.h"
 
 
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
-void RGB_to_Grayscale(image_io* image) {
+void RGB_to_Grayscale(image_io* image_src, image_io* image_dst) {
 	// Lock the image
-	if(SDL_MUSTLOCK(image->get_image())) {
-		SDL_LockSurface(image->get_image());
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_LockSurface(image_dst->get_image());
 	}
 
 
 	// Iterate through every pixel
-	//image->format->BitsPerPixel
-	for (int y = 0; y < image->get_image()->h; y++) {
-		for (int x = 0; x < image->get_image()->w; x++) {
-			Uint32 pixel_src = image->get_pixel(x, y);
+	for (int y = 0; y < image_src->get_image()->h; y++) {
+		for (int x = 0; x < image_src->get_image()->w; x++) {
+			Uint32 pixel_src = image_src->get_pixel(x, y);
 
 			int gray_value = .299*((pixel_src >> 0) & 0xFF)
 								+ .587*((pixel_src >> 8) & 0xFF)
@@ -26,14 +26,18 @@ void RGB_to_Grayscale(image_io* image) {
 							| (gray_value << 8)
 							| (gray_value << 16);
 
-			image->put_pixel(x, y, pixel_dst);
+			image_dst->put_pixel(x, y, pixel_dst);
 		}
 	}
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image->get_image())) {
-		SDL_UnlockSurface(image->get_image());
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_UnlockSurface(image_dst->get_image());
 	}
 
 
@@ -41,30 +45,37 @@ void RGB_to_Grayscale(image_io* image) {
 }
 
 
-void RGB_invert(image_io* image) {
+void invert(image_io* image_src, image_io* image_dst) {
 	// Lock the image
-	if(SDL_MUSTLOCK(image->get_image())) {
-		SDL_LockSurface(image->get_image());
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_LockSurface(image_dst->get_image());
 	}
 
 
 	// Iterate through every pixel
-	//image->format->BitsPerPixel
-	for (int y = 0; y < image->get_image()->h; y++) {
-		for (int x = 0; x < image->get_image()->w; x++) {
-			Uint32 pixel_src = image->get_pixel(x, y);
+	for (int y = 0; y < image_src->get_image()->h; y++) {
+		for (int x = 0; x < image_src->get_image()->w; x++) {
+			Uint32 pixel_src = image_src->get_pixel(x, y);
 			Uint32 pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
 							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
 							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
 
-			image->put_pixel(x, y, pixel_dst); 
+			image_dst->put_pixel(x, y, pixel_dst); 
 		}
 	}
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image->get_image())) {
-		SDL_UnlockSurface(image->get_image());
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_UnlockSurface(image_dst->get_image());
 	}
 
 
@@ -72,4 +83,61 @@ void RGB_invert(image_io* image) {
 }
 
 
-#endif
+void smooth(image_io* image_src, image_io* image_dst) {
+	// Lock the image
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_LockSurface(image_dst->get_image());
+	}
+
+
+	// Iterate through every pixel, skip the outer edges
+	for (int y = 1; y < image_src->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_src->get_image()->w - 1; x++) {
+
+
+			// Variable to hold the pixel average throughout the neighborhood
+			int R_avg = 0;
+			int G_avg = 0;
+			int B_avg = 0;
+
+			// Iterate through the neighborhood
+			for (int u = -1; u + 1 < 3; u++) {
+				for (int v = -1; v + 1 < 3; v++) {
+					Uint32 pixel_src = image_src->get_pixel(x + u, y + v);
+					
+					// Iterate through the 9 pixels in the neighborhood
+					// Each has an equal weight of 1/9
+					R_avg += ((pixel_src >> 0) & 0xFF);
+					G_avg += ((pixel_src >> 8) & 0xFF);
+					B_avg += ((pixel_src >> 16) & 0xFF);
+				}
+			}
+
+			
+			// Pack the color averages back into a single pixel
+			Uint32 pixel_dst = (R_avg/9 << 0)
+							| (G_avg/9 << 8)
+							| (B_avg/9 << 16);
+
+			image_dst->put_pixel(x, y, pixel_dst); 
+
+		}
+	}
+
+
+	// Unlock the image
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if(SDL_MUSTLOCK(image_dst->get_image())) {
+		SDL_UnlockSurface(image_dst->get_image());
+	}
+
+
+	return;
+}

@@ -3,25 +3,29 @@
 
 using namespace std;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 	// Initialize the SDL libraries
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	image_io* image = new image_io(argv[1]);
+	image_io* image_src = new image_io(argv[1]);
+	image_io* image_dst = new image_io(argv[1]);
 
 
-	image->RGB_to_Grayscale();
-	image->RGB_invert();
+	//RGB_to_Grayscale(image_src, image_dst);
+	//invert(image_src, image_dst);
+	smooth(image_src, image_dst);
 
 
-	if (!SDL_SaveBMP(image->get_image(), "../inverted.bmp")) {
+	if (!SDL_SaveBMP(image_dst->get_image(), "../inverted.bmp")) {
 		cout << "IMG_SaveBMP: " << IMG_GetError();
 
-		return 1;
+		exit(1);
 	}
 
 	
-	delete image;
+	// Free memory from the images
+	delete image_src;
+	delete image_dst;
 
 	// Cleans up and closes the SDL libraries
 	SDL_Quit();

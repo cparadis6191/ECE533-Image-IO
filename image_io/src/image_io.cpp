@@ -11,6 +11,8 @@ image_io::image_io(char* filename) {
 	// Check for an error
 	if (!image) {
 		cout << "IMG_Load_RW: " << IMG_GetError();
+
+		exit(1);
 	}
 
 
@@ -109,72 +111,4 @@ void image_io::put_pixel(int x, int y, Uint32 pixel) {
 
 			break;
 	}
-}
-
-
-// gray_value = (0.299*r + 0.587*g + 0.114*b);
-void image_io::RGB_to_Grayscale() {
-	// Lock the image
-	if(SDL_MUSTLOCK(image)) {
-		SDL_LockSurface(image);
-	}
-
-
-	// Iterate through every pixel
-	//image->format->BitsPerPixel
-	for (int y = 0; y < image->h; y++) {
-		for (int x = 0; x < image->w; x++) {
-			Uint32 pixel_src = get_pixel(x, y);
-
-			int gray_value = .299*((pixel_src >> 0) & 0xFF)
-								+ .587*((pixel_src >> 8) & 0xFF)
-								+ .114*((pixel_src >> 16) & 0xFF);
-
-			Uint32 pixel_dst = (gray_value << 0)
-							| (gray_value << 8)
-							| (gray_value << 16);
-
-			put_pixel(x, y, pixel_dst);
-		}
-	}
-
-
-	// Unlock the image
-	if(SDL_MUSTLOCK(image)) {
-		SDL_UnlockSurface(image);
-	}
-
-
-	return;
-}
-
-
-void image_io::RGB_invert() {
-	// Lock the image
-	if(SDL_MUSTLOCK(image)) {
-		SDL_LockSurface(image);
-	}
-
-
-	// Iterate through every pixel
-	//image->format->BitsPerPixel
-	for (int y = 0; y < image->h; y++) {
-		for (int x = 0; x < image->w; x++) {
-			Uint32 pixel_src = get_pixel(x, y);
-			Uint32 pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
-							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
-							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
-
-			put_pixel(x, y, pixel_dst); 
-		}
-	}
-
-
-	// Unlock the image
-	if(SDL_MUSTLOCK(image)) {
-		SDL_UnlockSurface(image);
-	}
-
-
-	return;
 }

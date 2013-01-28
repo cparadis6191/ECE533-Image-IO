@@ -20,13 +20,6 @@ class image_io {
 
 		Uint32 get_pixel(int x, int y);
 		void put_pixel(int x, int y, Uint32 pixel);
-
-
-		// Transforms
-		// gray = (0.299*r + 0.587*g + 0.114*b);
-		void RGB_to_Grayscale();
-		void RGB_invert();
-
 	private:
 		SDL_Surface* image;
 };
