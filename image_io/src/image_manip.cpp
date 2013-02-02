@@ -18,11 +18,12 @@ int main(int argc, char* argv[]) {
 	// Open the image
 	image_io* image = new image_io(argv[1]);
 
+	hist_eq(image);
 	//grayscale(image);
 	//invert(image);
-	smooth(image);
+	//smooth(image);
 
-
+	// Write to a new image file
 	image->write(argv[2]);
 
 

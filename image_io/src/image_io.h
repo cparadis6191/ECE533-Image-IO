@@ -23,6 +23,7 @@ class image_io {
 
 		Uint32 get_pixel(int x, int y);
 		void put_pixel(int x, int y, Uint32 pixel);
+
 	private:
 		SDL_Surface* image;
 };

@@ -1,4 +1,5 @@
 #include "transforms.h"
+#include <iostream>
 
 
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
@@ -14,9 +15,7 @@ void grayscale(image_io* image_src) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			int gray_value = .299*((pixel_src >> 0) & 0xFF)
-								+ .587*((pixel_src >> 8) & 0xFF)
-								+ .114*((pixel_src >> 16) & 0xFF);
+			Uint32 gray_value = RGB_to_gray(pixel_src);
 
 			Uint32 pixel_dst = (gray_value << 0)
 							| (gray_value << 8)
@@ -104,7 +103,6 @@ void smooth(image_io* image_src) {
 				}
 			}
 
-			
 			// Pack the color averages back into a single pixel
 			Uint32 pixel_dst = (R_avg/9 << 0)
 							| (G_avg/9 << 8)
@@ -129,4 +127,96 @@ void smooth(image_io* image_src) {
 
 
 	return;
+}
+
+
+void hist_eq(image_io* image_src) {
+	// Lock the image
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+
+
+	// Keep track of gray level intensities
+	Uint32 gray_level_sum[256];
+	Uint32 gray_level_integral[256];
+
+	for (int i = 0; i <= 255; i++) {
+		gray_level_sum[i] = 0;
+	}
+
+
+	// Iterate through every pixel and measure the intensity
+	for (int y = 0; y < image_src->get_image()->h; y++) {
+		for (int x = 0; x < image_src->get_image()->w; x++) {
+			Uint32 pixel_src = image_src->get_pixel(x, y);
+
+			Uint32 gray_value = RGB_to_gray(pixel_src);
+
+			// Increment the count of that intensity
+			// This is data for the histogram
+			gray_level_sum[gray_value] += 1;
+		}
+	}
+
+
+	gray_level_integral[0] = gray_level_sum[0];
+
+	for (int j = 1; j <= 255; j++) {
+		// Integrate over the gray value intensity levels
+		gray_level_integral[j] = (gray_level_sum[j] + gray_level_integral[j - 1]);
+	}
+
+
+	// Iterate through every pixel and adjust the intensity
+	for (int y = 0; y < image_src->get_image()->h; y++) {
+		for (int x = 0; x < image_src->get_image()->w; x++) {
+			Uint32 pixel_src = image_src->get_pixel(x, y);
+
+			Uint32 gray_value = RGB_to_gray(pixel_src);
+
+			// Use the integral as the transfer function of each pixel
+			Uint32 gray_value_unscaled = gray_level_integral[gray_value];
+
+			Uint32 gray_value_scaled = 255.0*gray_value_unscaled/gray_level_integral[255];
+
+			// Pack the color averages back into a single pixel
+			// TODO: Make this preserve color and just change intensity
+			Uint32 pixel_dst = gray_to_RGB(gray_value_scaled);
+
+			// Write to the image
+			image_src->put_pixel(x, y, pixel_dst); 
+		}
+	}
+
+
+	// Unlock the image
+	if(SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+
+
+	return;
+}
+
+
+// Convert from RGB pixel format to gray value
+Uint32 RGB_to_gray(Uint32 RGB_pixel) {
+	Uint32 gray_value = .299*((RGB_pixel >> 0) & 0xFF)
+						+ .587*((RGB_pixel >> 8) & 0xFF)
+						+ .114*((RGB_pixel >> 16) & 0xFF);
+
+
+	return gray_value;
+}
+
+
+// Convert a grayscale value back into RGB pixel representation (color is lost)
+Uint32 gray_to_RGB(Uint32 gray_value) {
+	Uint32 RGB_pixel = (gray_value << 0)
+					| (gray_value << 8)
+					| (gray_value << 16);
+
+
+	return RGB_pixel;
 }

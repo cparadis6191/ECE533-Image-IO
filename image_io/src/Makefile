@@ -1,12 +1,12 @@
 TARGET = image_manip
 OBJS = image_manip.o image_io.o transforms.o
-CXXFLAGS = -g -Wall
-LDFLAGS = -lmingw32 -lSDLmain -lSDL -lSDL_image -lstdc++
+CPPFLAGS = -g -Wall
+LDFLAGS = `sdl-config --cflags --libs` -lSDL_image -lstdc++
 .PHONY:clean
 
 # CXX is already defined and depends on the object being made
 ${TARGET}:${OBJS}
-	${CXX} -o ../${TARGET} ${OBJS} ${CXXFLAGS} ${LDFLAGS}
+	${CXX} -o ../${TARGET} ${OBJS} ${LDFLAGS}
 
 image_manip.o:image_manip.h image_io.h transforms.h
 image_io.o:image_io.h

@@ -20,4 +20,13 @@ void invert(image_io* image_src);
 // Utilizes a 3x3 neighborhood averaging algorithm
 void smooth(image_io* image_src);
 
+// Adjust constrast with histogram equalization algorithm
+void hist_eq(image_io* image_src);
+
+// Convert an RGB pixel representation to a grayscale value
+Uint32 RGB_to_gray(Uint32 RGB_pixel);
+
+// Convert a grayscale value back into RGB pixel representation (color is lost)
+Uint32 gray_to_RGB(Uint32 gray_value);
+
 #endif
