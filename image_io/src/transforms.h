@@ -24,7 +24,7 @@ void smooth(image_io* image_src);
 void hist_eq(image_io* image_src);
 
 // Convert an RGB pixel representation to a grayscale value
-Uint32 RGB_to_gray(Uint32 RGB_pixel);
+Uint8 RGB_to_gray(Uint32 RGB_pixel);
 
 // Convert a grayscale value back into RGB pixel representation (color is lost)
 Uint32 gray_to_RGB(Uint32 gray_value);

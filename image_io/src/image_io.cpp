@@ -10,7 +10,7 @@ image_io::image_io(char* filename) {
 	image = IMG_Load_RW(SDL_RWFromFile(filename, "rb"), 0);
 
 
-	// Returns null on an error
+	// Exit on an error
 	if (!(this->image)) {
 		cout << "IMG_Load_RW: " << IMG_GetError();
 

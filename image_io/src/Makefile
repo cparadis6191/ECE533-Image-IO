@@ -6,7 +6,7 @@ LDFLAGS = `sdl-config --cflags --libs` -lSDL_image -lstdc++
 
 # CXX is already defined and depends on the object being made
 ${TARGET}:${OBJS}
-	${CXX} -o ../${TARGET} ${OBJS} ${LDFLAGS}
+	${CXX} -o ../${TARGET} ${OBJS} ${CPPFLAGS} ${LDFLAGS}
 
 image_manip.o:image_manip.h image_io.h transforms.h
 image_io.o:image_io.h

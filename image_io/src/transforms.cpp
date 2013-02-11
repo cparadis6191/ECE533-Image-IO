@@ -1,8 +1,6 @@
 #include "transforms.h"
-#include <iostream>
 
 
-// gray_value = (0.299*r + 0.587*g + 0.114*b);
 void grayscale(image_io* image_src) {
 	// Lock the image
 	if(SDL_MUSTLOCK(image_src->get_image())) {
@@ -47,6 +45,8 @@ void invert(image_io* image_src) {
 	for (int y = 0; y < image_src->get_image()->h; y++) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
+
+			// Invert the color
 			Uint32 pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
 							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
 							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
@@ -139,10 +139,11 @@ void hist_eq(image_io* image_src) {
 
 	// Keep track of gray level intensities
 	Uint32 gray_level_sum[256];
-	Uint32 gray_level_integral[256];
+	long int gray_level_integral[256];
 
 	for (int i = 0; i <= 255; i++) {
 		gray_level_sum[i] = 0;
+		gray_level_integral[i] = 0;
 	}
 
 
@@ -151,7 +152,7 @@ void hist_eq(image_io* image_src) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			Uint32 gray_value = RGB_to_gray(pixel_src);
+			Uint8 gray_value = RGB_to_gray(pixel_src);
 
 			// Increment the count of that intensity
 			// This is data for the histogram
@@ -167,18 +168,17 @@ void hist_eq(image_io* image_src) {
 		gray_level_integral[j] = (gray_level_sum[j] + gray_level_integral[j - 1]);
 	}
 
-
 	// Iterate through every pixel and adjust the intensity
 	for (int y = 0; y < image_src->get_image()->h; y++) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			Uint32 gray_value = RGB_to_gray(pixel_src);
+			Uint8 gray_value = RGB_to_gray(pixel_src);
 
 			// Use the integral as the transfer function of each pixel
 			Uint32 gray_value_unscaled = gray_level_integral[gray_value];
 
-			Uint32 gray_value_scaled = 255.0*gray_value_unscaled/gray_level_integral[255];
+			Uint32 gray_value_scaled = 255.0*gray_value_unscaled/((double) gray_level_integral[255]);
 
 			// Pack the color averages back into a single pixel
 			// TODO: Make this preserve color and just change intensity
@@ -201,10 +201,17 @@ void hist_eq(image_io* image_src) {
 
 
 // Convert from RGB pixel format to gray value
-Uint32 RGB_to_gray(Uint32 RGB_pixel) {
+// gray_value = (0.299*r + 0.587*g + 0.114*b);
+Uint8 RGB_to_gray(Uint32 RGB_pixel) {
 	Uint32 gray_value = .299*((RGB_pixel >> 0) & 0xFF)
-						+ .587*((RGB_pixel >> 8) & 0xFF)
-						+ .114*((RGB_pixel >> 16) & 0xFF);
+					+ .587*((RGB_pixel >> 8) & 0xFF)
+					+ .114*((RGB_pixel >> 16) & 0xFF);
+
+	// The above math shouldn't grow greater than 255 so checking for saturation/overflow isn't necessary
+
+	// Make sure things saturate properly
+	gray_value = (gray_value < 0)?0:gray_value;
+	gray_value = (gray_value > 255)?255:gray_value;
 
 
 	return gray_value;
@@ -212,6 +219,7 @@ Uint32 RGB_to_gray(Uint32 RGB_pixel) {
 
 
 // Convert a grayscale value back into RGB pixel representation (color is lost)
+// Needs to be a 32-bit int so the bit shifts don't shift off into nothing
 Uint32 gray_to_RGB(Uint32 gray_value) {
 	Uint32 RGB_pixel = (gray_value << 0)
 					| (gray_value << 8)
