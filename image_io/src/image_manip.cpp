@@ -1,8 +1,5 @@
 #include "image_manip.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 
@@ -17,17 +14,21 @@ int main(int argc, char** argv) {
 	char* in_file = NULL;
 	char c;
 
+	opterr = 0;
+
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:igs")) != -1) {
+	do {
+		c = getopt(argc, argv, "f:o:igs");
+
 		switch (c) {
-			// Input file flag
+			// Input file
 			case 'f':
 				in_file = optarg;
 				
 				break;
 
 
-			// Output file flag
+			// Output file
 			case 'o':
 				out_file = optarg;
 				
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
 
 				return 1;
 		}
-	}
+	} while (c != -1);
 
 
 	// Initialize the SDL libraries
@@ -78,12 +79,11 @@ int main(int argc, char** argv) {
 	image_io* image = new image_io(in_file);
 
 
+	// Do the specified operations
 	if (i_flag) invert(image);
 	if (g_flag) grayscale(image);
 	if (s_flag) smooth(image);
-	//grayscale(image);
-	//invert(image);
-	//smooth(image);
+
 
 	// Write to a new image file
 	image->write(out_file);

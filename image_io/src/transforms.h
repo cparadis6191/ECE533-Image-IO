@@ -1,9 +1,6 @@
 #ifndef _TRANSFORMS_H__
 #define _TRANSFORMS_H__
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-
 #include "image_io.h"
 
 
