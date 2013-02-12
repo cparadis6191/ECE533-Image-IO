@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
 	// Initialize command line flags
 	int i_flag = 0;
 	int s_flag = 0;
+	int m_flag = 0;
 	int h_flag = 0;
 
 	// Color mask flags
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	 while ((c = getopt(argc, argv, "f:o:ishrgb")) != -1) {
+	 while ((c = getopt(argc, argv, "f:o:ismhrgb")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -59,14 +60,21 @@ int main(int argc, char** argv) {
 				break;
 
 
-			// Smooth the image
+			// Smooth the image with mean algorithm
 			case 's':
 				s_flag = 1;
 
 				break;
 
 
-			// Smooth the image
+			// Smooth the image with median algorithm
+			case 'm':
+				m_flag = 1;
+
+				break;
+
+
+			// Apply histogram equalization algorithm to the image
 			case 'h':
 				h_flag = 1;
 
@@ -138,8 +146,8 @@ int main(int argc, char** argv) {
 
 	// Do the the operations specified by the command line switches
 	if (i_flag) invert(image);
-	//if (s_flag) smooth_mean(image);
-	if (s_flag) smooth_median(image);
+	if (s_flag) smooth_mean(image);
+	if (m_flag) smooth_median(image);
 	if (h_flag) hist_eq(image);
 
 
