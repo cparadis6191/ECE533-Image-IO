@@ -231,13 +231,22 @@ void hist_eq(image_io* image_src) {
 	}
 
 
-	// Keep track of gray level intensities
-	Uint32 gray_level_sum[256];
-	long int gray_level_integral[256];
+	// Keep track of RGB level intensities
+	Uint32 red_level_sum[256];
+	Uint32 green_level_sum[256];
+	Uint32 blue_level_sum[256];
+	long int red_level_integral[256];
+	long int green_level_integral[256];
+	long int blue_level_integral[256];
 
 	for (int i = 0; i <= 255; i++) {
-		gray_level_sum[i] = 0;
-		gray_level_integral[i] = 0;
+		red_level_sum[i] = 0;
+		green_level_sum[i] = 0;
+		blue_level_sum[i] = 0;
+
+		red_level_integral[i] = 0;
+		green_level_integral[i] = 0;
+		blue_level_integral[i] = 0;
 	}
 
 
@@ -246,20 +255,30 @@ void hist_eq(image_io* image_src) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			Uint8 gray_value = RGB_to_gray(pixel_src);
+			Uint8 red_value = RGB_to_red(pixel_src);
+			Uint8 green_value = RGB_to_green(pixel_src);
+			Uint8 blue_value = RGB_to_blue(pixel_src);
 
 			// Increment the count of that intensity
 			// This is data for the histogram
-			gray_level_sum[gray_value] += 1;
+			red_level_sum[red_value] += 1;
+			green_level_sum[green_value] += 1;
+			blue_level_sum[blue_value] += 1;
 		}
 	}
 
 
-	gray_level_integral[0] = gray_level_sum[0];
+	// Compute the first term of the integral
+	red_level_integral[0] = red_level_sum[0];
+	green_level_integral[0] = green_level_sum[0];
+	blue_level_integral[0] = blue_level_sum[0];
 
+	// Compute the integral
 	for (int j = 1; j <= 255; j++) {
 		// Integrate over the gray value intensity levels
-		gray_level_integral[j] = (gray_level_sum[j] + gray_level_integral[j - 1]);
+		red_level_integral[j] = (red_level_sum[j] + red_level_integral[j - 1]);
+		green_level_integral[j] = (green_level_sum[j] + green_level_integral[j - 1]);
+		blue_level_integral[j] = (blue_level_sum[j] + blue_level_integral[j - 1]);
 	}
 
 	// Iterate through every pixel and adjust the intensity
@@ -267,18 +286,24 @@ void hist_eq(image_io* image_src) {
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			Uint8 gray_value = RGB_to_gray(pixel_src);
+			// Separate into the red/green/blue intensities
+			Uint8 red_value = RGB_to_red(pixel_src);
+			Uint8 green_value = RGB_to_green(pixel_src);
+			Uint8 blue_value = RGB_to_blue(pixel_src);
 
 			// Use the integral as the transfer function of each pixel
-			Uint32 gray_value_unscaled = gray_level_integral[gray_value];
+			Uint32 red_value_unscaled = red_level_integral[red_value];
+			Uint32 green_value_unscaled = green_level_integral[green_value];
+			Uint32 blue_value_unscaled = blue_level_integral[blue_value];
 
-			Uint32 gray_value_scaled = 255.0*gray_value_unscaled/((double) gray_level_integral[255]);
+			Uint32 red_value_scaled = 255.0*red_value_unscaled/((double) red_level_integral[255]);
+			Uint32 green_value_scaled = 255.0*green_value_unscaled/((double) green_level_integral[255]);
+			Uint32 blue_value_scaled = 255.0*blue_value_unscaled/((double) blue_level_integral[255]);
 
 			// Pack the color averages back into a single pixel
-			// TODO: Make this preserve color and just change intensity
-			Uint32 pixel_dst = pack_RGB(gray_value_scaled,
-										gray_value_scaled,
-										gray_value_scaled);
+			Uint32 pixel_dst = pack_RGB(red_value_scaled,
+										green_value_scaled,
+										blue_value_scaled);
 
 			// Write to the image
 			image_src->put_pixel(x, y, pixel_dst); 
