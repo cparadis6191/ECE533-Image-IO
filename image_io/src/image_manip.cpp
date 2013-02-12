@@ -138,7 +138,8 @@ int main(int argc, char** argv) {
 
 	// Do the the operations specified by the command line switches
 	if (i_flag) invert(image);
-	if (s_flag) smooth(image);
+	//if (s_flag) smooth_mean(image);
+	if (s_flag) smooth_median(image);
 	if (h_flag) hist_eq(image);
 
 

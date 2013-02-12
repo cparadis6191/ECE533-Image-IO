@@ -8,10 +8,6 @@
 #define M_GREEN (1 << 1)
 #define M_BLUE (1 << 2)
 
-// Smoothing flags
-#define F_MEAN (1 << 3)
-#define F_MED (1 << 4)
-
 
 // Forward declaration
 class image_io;
@@ -25,7 +21,9 @@ void invert(image_io* image_src);
 
 // Apply a smoothing effect
 // Utilizes a 3x3 neighborhood averaging algorithm
-void smooth(image_io* image_src);
+void smooth_mean(image_io* image_src);
+// Utilizes a 3x3 neighborhood median algorithm
+void smooth_median(image_io* image_src);
 
 // Adjust constrast with histogram equalization algorithm
 void hist_eq(image_io* image_src);

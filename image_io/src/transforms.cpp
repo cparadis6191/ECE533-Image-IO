@@ -1,5 +1,8 @@
 #include "transforms.h"
 
+#include <vector>
+#include <algorithm>
+
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
@@ -79,7 +82,7 @@ void invert(image_io* image_src) {
 }
 
 
-void smooth(image_io* image_src) {
+void smooth_mean(image_io* image_src) {
 	// Create a copy for use in algorithms
 	image_io* image_tmp = new image_io(image_src);
 
@@ -120,6 +123,84 @@ void smooth(image_io* image_src) {
 			Uint32 pixel_dst = (R_avg/9 << 0)
 							| (G_avg/9 << 8)
 							| (B_avg/9 << 16);
+
+			image_src->put_pixel(x, y, pixel_dst); 
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_UnlockSurface(image_tmp->get_image());
+	}
+
+	// Free the temporary memory
+	delete image_tmp;
+
+
+	return;
+}
+
+
+void smooth_median(image_io* image_src) {
+	// Create a copy for use in algorithms
+	image_io* image_tmp = new image_io(image_src);
+
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_LockSurface(image_tmp->get_image());
+	}
+
+
+	// Iterate through every pixel, skip the outer edges
+	for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+
+
+			// Variable to hold the pixel median throughout the neighborhood
+			int R_med;
+			int G_med;
+			int B_med;
+
+			int R_list[9];
+			int G_list[9];
+			int B_list[9];
+
+			// Iterate through the neighborhood
+			for (int u = -1; u + 1 < 3; u++) {
+				for (int v = -1; v + 1 < 3; v++) {
+					Uint32 pixel_src = image_tmp->get_pixel(x + u, y + v);
+					
+					// Iterate through the 9 pixels in the neighborhood
+					R_list[(u + 1) + 3*(v + 1)] = ((pixel_src >> 0) & 0xFF);
+					G_list[(u + 1) + 3*(v + 1)] = ((pixel_src >> 8) & 0xFF);
+					B_list[(u + 1) + 3*(v + 1)] = ((pixel_src >> 16) & 0xFF);
+				}
+			}
+
+			// Sort the lists
+			std::sort(R_list, R_list + 9);
+			std::sort(G_list, G_list + 9);
+			std::sort(B_list, B_list + 9);
+
+			// Choose the middle value
+			R_med = R_list[5];
+			G_med = G_list[5];
+			B_med = B_list[5];
+
+
+			// Pack the color medians back into a single pixel
+			Uint32 pixel_dst = (R_med << 0)
+							| (G_med << 8)
+							| (B_med << 16);
 
 			image_src->put_pixel(x, y, pixel_dst); 
 		}
