@@ -1,5 +1,6 @@
 #include "image_io.h"
 
+#include <iostream>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
@@ -59,7 +60,7 @@ void image_io::read(const char* filename) {
 
 
 void image_io::write(const char* filename) {
-	// Returns -1 on error
+	// Exits with -1 on error
 	if (SDL_SaveBMP(this->image, filename)) {
 		cout << "IMG_SaveBMP: " << IMG_GetError();
 

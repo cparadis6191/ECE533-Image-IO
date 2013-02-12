@@ -1,6 +1,8 @@
 #include "image_manip.h"
 
 #include <unistd.h>
+#include <fstream>
+#include <iostream>
 
 
 using namespace std;
@@ -10,27 +12,36 @@ int main(int argc, char** argv) {
 	int i_flag = 0;
 	int g_flag = 0;
 	int s_flag = 0;
-	char* out_file = NULL;
-	char* in_file = NULL;
+	int h_flag = 0;
+
+	char* output_file = NULL;
+	char* input_file = NULL;
 	char c;
 
 	opterr = 0;
 
-	// Parse through all the arguments
-	do {
-		c = getopt(argc, argv, "f:o:igs");
 
+	// If no command-line arguments are passed
+	if (argc < 2) {
+		printf("Usage: io_manip -f [INPUT]... -o [OUTPUT]... [OPTION]...\n");
+
+		return 1;
+	}
+
+
+	// Parse through all the arguments
+	 while ((c = getopt(argc, argv, "f:o:igsh")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
-				in_file = optarg;
+				input_file = optarg;
 				
 				break;
 
 
 			// Output file
 			case 'o':
-				out_file = optarg;
+				output_file = optarg;
 				
 				break;
 
@@ -56,6 +67,14 @@ int main(int argc, char** argv) {
 				break;
 
 
+			// Smooth the image
+			case 'h':
+				h_flag = 1;
+
+				break;
+
+
+			// Error checking
 			case '?':
 			default:
 				if ((optopt == 'f') || (optopt == 'o')) {
@@ -69,24 +88,39 @@ int main(int argc, char** argv) {
 
 				return 1;
 		}
-	} while (c != -1);
+	}
+
+	// Check for input and output files
+	if (!input_file) {
+		cout << "Please specify an input file!\n";
+
+		return 1;
+	}
+
+	if (!output_file) {
+		cout << "Please specify an output file!\n";
+
+		return 1;
+	}
 
 
 	// Initialize the SDL libraries
 	SDL_Init(SDL_INIT_EVERYTHING);
 
+
 	// Open the image
-	image_io* image = new image_io(in_file);
+	image_io* image = new image_io(input_file);
 
 
-	// Do the specified operations
-	if (i_flag) invert(image);
+	// Do the the operations specified by the command line switches
 	if (g_flag) grayscale(image);
+	if (i_flag) invert(image);
 	if (s_flag) smooth(image);
+	if (h_flag) hist_eq(image);
 
 
 	// Write to a new image file
-	image->write(out_file);
+	image->write(output_file);
 
 
 	// Free memory from the images

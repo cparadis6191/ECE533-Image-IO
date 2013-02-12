@@ -1,9 +1,6 @@
 #ifndef _IMAGE_IO_H__
 #define _IMAGE_IO_H__
 
-#include <iostream>
-#include <string>
-
 #include <SDL/SDL.h>
 
 
