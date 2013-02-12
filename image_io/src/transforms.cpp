@@ -4,23 +4,33 @@
 #include <SDL/SDL_image.h>
 
 
-void grayscale(image_io* image_src) {
+void color_mask(image_io* image_src, int c_mask) {
 	// Lock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
 	}
+
+	Uint32 red_value, green_value, blue_value;
 
 
 	// Iterate through every pixel
 	for (int y = 0; y < image_src->get_image()->h; y++) {
+		red_value = green_value = blue_value = 0;
+
 		for (int x = 0; x < image_src->get_image()->w; x++) {
 			Uint32 pixel_src = image_src->get_pixel(x, y);
 
-			Uint32 gray_value = RGB_to_gray(pixel_src);
+			// Strip colors depending on c_mask
+			if (((c_mask & M_RED) != M_RED)) red_value = RGB_to_red(pixel_src);
+			if (((c_mask & M_GREEN) != M_GREEN)) green_value = RGB_to_green(pixel_src);
+			if (((c_mask & M_BLUE) != M_BLUE)) blue_value = RGB_to_blue(pixel_src);
 
-			Uint32 pixel_dst = (gray_value << 0)
-							| (gray_value << 8)
-							| (gray_value << 16);
+			// If all colors are masked, display in grayscale
+			if ((c_mask == (M_RED | M_GREEN | M_BLUE))) {
+				red_value = green_value = blue_value = RGB_to_gray(pixel_src);
+			}
+
+			Uint32 pixel_dst = pack_RGB(red_value, green_value, blue_value); 
 
 			image_src->put_pixel(x, y, pixel_dst);
 		}
@@ -28,7 +38,7 @@ void grayscale(image_io* image_src) {
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
 
@@ -39,7 +49,7 @@ void grayscale(image_io* image_src) {
 
 void invert(image_io* image_src) {
 	// Lock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
 	}
 
@@ -60,7 +70,7 @@ void invert(image_io* image_src) {
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
 
@@ -74,11 +84,11 @@ void smooth(image_io* image_src) {
 	image_io* image_tmp = new image_io(image_src);
 
 	// Lock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
 	}
 	// Lock the image
-	if(SDL_MUSTLOCK(image_tmp->get_image())) {
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
 		SDL_LockSurface(image_tmp->get_image());
 	}
 
@@ -117,11 +127,11 @@ void smooth(image_io* image_src) {
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_tmp->get_image())) {
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
 		SDL_UnlockSurface(image_tmp->get_image());
 	}
 
@@ -135,7 +145,7 @@ void smooth(image_io* image_src) {
 
 void hist_eq(image_io* image_src) {
 	// Lock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_LockSurface(image_src->get_image());
 	}
 
@@ -185,7 +195,9 @@ void hist_eq(image_io* image_src) {
 
 			// Pack the color averages back into a single pixel
 			// TODO: Make this preserve color and just change intensity
-			Uint32 pixel_dst = gray_to_RGB(gray_value_scaled);
+			Uint32 pixel_dst = pack_RGB(gray_value_scaled,
+										gray_value_scaled,
+										gray_value_scaled);
 
 			// Write to the image
 			image_src->put_pixel(x, y, pixel_dst); 
@@ -194,7 +206,7 @@ void hist_eq(image_io* image_src) {
 
 
 	// Unlock the image
-	if(SDL_MUSTLOCK(image_src->get_image())) {
+	if (SDL_MUSTLOCK(image_src->get_image())) {
 		SDL_UnlockSurface(image_src->get_image());
 	}
 
@@ -206,27 +218,28 @@ void hist_eq(image_io* image_src) {
 // Convert from RGB pixel format to gray value
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
 Uint8 RGB_to_gray(Uint32 RGB_pixel) {
+	// This math shouldn't grow greater than 255 so checking for saturation/overflow isn't necessary
 	Uint32 gray_value = .299*((RGB_pixel >> 0) & 0xFF)
 					+ .587*((RGB_pixel >> 8) & 0xFF)
 					+ .114*((RGB_pixel >> 16) & 0xFF);
-
-	// The above math shouldn't grow greater than 255 so checking for saturation/overflow isn't necessary
-
-	// Make sure things saturate properly
-	gray_value = (gray_value < 0)?0:gray_value;
-	gray_value = (gray_value > 255)?255:gray_value;
 
 
 	return gray_value;
 }
 
 
-// Convert a grayscale value back into RGB pixel representation (color is lost)
+// Return the color components
+Uint8 RGB_to_red(Uint32 RGB_pixel) { return ((RGB_pixel >> 0) & 0xFF); }
+Uint8 RGB_to_green(Uint32 RGB_pixel) { return ((RGB_pixel >> 8) & 0xFF); }
+Uint8 RGB_to_blue(Uint32 RGB_pixel) { return ((RGB_pixel >> 16) & 0xFF); }
+
+
+// Takes red/green/blue values and packs it back into RGB representation
 // Needs to be a 32-bit int so the bit shifts don't shift off into nothing
-Uint32 gray_to_RGB(Uint32 gray_value) {
-	Uint32 RGB_pixel = (gray_value << 0)
-					| (gray_value << 8)
-					| (gray_value << 16);
+Uint32 pack_RGB(Uint32 red_value, Uint32 green_value, Uint32 blue_value) {
+	Uint32 RGB_pixel = (red_value << 0)
+					| (green_value << 8)
+					| (blue_value << 16);
 
 
 	return RGB_pixel;

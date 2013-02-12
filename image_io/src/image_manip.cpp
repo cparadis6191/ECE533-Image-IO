@@ -10,13 +10,19 @@ using namespace std;
 int main(int argc, char** argv) {
 	// Initialize command line flags
 	int i_flag = 0;
-	int g_flag = 0;
 	int s_flag = 0;
 	int h_flag = 0;
+
+	// Color mask flags
+	int r_flag = 0;
+	int g_flag = 0;
+	int b_flag = 0;
 
 	char* output_file = NULL;
 	char* input_file = NULL;
 	char c;
+
+	int c_mask = 0;
 
 	opterr = 0;
 
@@ -30,7 +36,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	 while ((c = getopt(argc, argv, "f:o:igsh")) != -1) {
+	 while ((c = getopt(argc, argv, "f:o:ishrgb")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -53,13 +59,6 @@ int main(int argc, char** argv) {
 				break;
 
 
-			// Convert the image to grayscale
-			case 'g':
-				g_flag = 1;
-				
-				break;
-
-
 			// Smooth the image
 			case 's':
 				s_flag = 1;
@@ -71,6 +70,27 @@ int main(int argc, char** argv) {
 			case 'h':
 				h_flag = 1;
 
+				break;
+
+
+			// Mask off the red color plane
+			case 'r':
+				r_flag = 1;
+				
+				break;
+
+
+			// Mask off the green color plane
+			case 'g':
+				g_flag = 1;
+				
+				break;
+
+
+			//  Mask off the blue color plane
+			case 'b':
+				b_flag = 1;
+				
 				break;
 
 
@@ -112,8 +132,11 @@ int main(int argc, char** argv) {
 	image_io* image = new image_io(input_file);
 
 
+	// Compose the mask and mask off specified colors
+	c_mask = (r_flag*M_RED | g_flag*M_GREEN | b_flag*M_BLUE);
+	color_mask(image, c_mask);
+
 	// Do the the operations specified by the command line switches
-	if (g_flag) grayscale(image);
 	if (i_flag) invert(image);
 	if (s_flag) smooth(image);
 	if (h_flag) hist_eq(image);
@@ -132,5 +155,3 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
-
-
