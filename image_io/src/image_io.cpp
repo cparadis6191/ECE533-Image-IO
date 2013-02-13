@@ -7,7 +7,6 @@
 
 using namespace std;
 
-
 // Parameterized constructor
 // Pass it a filename to open an instance of that file
 image_io::image_io(char* filename) {
@@ -17,6 +16,7 @@ image_io::image_io(char* filename) {
 	// Exit on an error
 	if (!(this->image)) {
 		cout << "IMG_Load_RW: " << IMG_GetError();
+
 
 		exit(1);
 	}
@@ -106,9 +106,10 @@ Uint32 image_io::get_pixel(int x, int y) {
 			break;
 
 
-			default:
+		default:
 
-			return 0;       /* shouldn't happen, but avoids warnings */
+
+			return 0;	/* shouldn't happen, but avoids warnings */
 	}
 }
 
