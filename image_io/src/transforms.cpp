@@ -192,9 +192,9 @@ void smooth_median(image_io* image_src) {
 			std::sort(B_list, B_list + 9);
 
 			// Choose the middle value
-			R_med = R_list[5];
-			G_med = G_list[5];
-			B_med = B_list[5];
+			R_med = R_list[4];
+			G_med = G_list[4];
+			B_med = B_list[4];
 
 
 			// Pack the color medians back into a single pixel
