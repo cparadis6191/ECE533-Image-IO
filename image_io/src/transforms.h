@@ -34,14 +34,13 @@ void threshold(image_io* image_src, Uint32 threshold);
 // Edge detection using the Sobel Gradient
 void sobel_gradient(image_io* image_src);
 
-
 void laplacian(image_io* image_src);
 
+// Degrade the image by n pixels
+void erosion(image_io* image_src, int erode_n);
 
-void erosion(image_io* image_src);
-
-
-void dilation(image_io* image_src);
+// Enlarge the iamge by n pixels
+void dilation(image_io* image_src, int dilate_n);
 
 // Convert an RGB pixel representation to a grayscale value
 Uint8 RGB_to_gray(Uint32 RGB_pixel);

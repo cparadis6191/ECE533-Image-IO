@@ -12,6 +12,8 @@ int main(int argc, char** argv) {
 	// Initialize command line flags
 	int t_flag = 0;
 	int t_value = 0;
+	int d_flag = 0;
+	int d_value = 0;
 	int g_flag = 0;
 	int l_flag = 0;
 	int i_flag = 0;
@@ -46,7 +48,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:t:glis:hc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:d:glis:hc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -66,6 +68,14 @@ int main(int argc, char** argv) {
 			case 't':
 				t_flag = 1;
 				t_value = atoi(optarg);
+				
+				break;
+
+
+			// Threshold the image
+			case 'd':
+				d_flag = 1;
+				d_value = atoi(optarg);
 				
 				break;
 
@@ -177,6 +187,7 @@ int main(int argc, char** argv) {
 
 	// Do the the operations specified by the command line switches
 	if (t_flag) threshold(image, t_value);
+	if (d_flag) dilation(image, d_value);
 
 	if (g_flag) sobel_gradient(image);
 	if (l_flag) laplacian(image);
