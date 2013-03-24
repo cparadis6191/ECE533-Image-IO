@@ -508,6 +508,61 @@ void laplacian(image_io* image_src) {
 
 // Degrade the image by n pixels
 void erosion(image_io* image_src, int erode_n) {
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+
+
+	for (int n = 0; n < erode_n; n++) {
+		// Create a copy for use in algorithms
+		image_io* image_tmp = new image_io(image_src);
+
+		// Lock the image
+		if (SDL_MUSTLOCK(image_tmp->get_image())) {
+			SDL_LockSurface(image_tmp->get_image());
+		}
+
+
+		// Iterate through every pixel, skip the outer edges
+		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+			for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+				Uint32 pixel_src = image_tmp->get_pixel(x, y);
+
+				// Get the gray value of each pixel
+				Uint32 gray_value = RGB_to_gray(pixel_src);
+
+				if (gray_value == 0x00) {
+						// Pack the color averages back into a single pixel
+						Uint32 pixel_dst = pack_RGB(0x00, 0x00, 0x00);
+
+						// Fill in a 3x3 mask of pixels
+						image_src->put_pixel(x - 1, y - 1, pixel_dst); 
+						image_src->put_pixel(x, y - 1, pixel_dst); 
+						image_src->put_pixel(x + 1, y - 1, pixel_dst); 
+						image_src->put_pixel(x - 1, y, pixel_dst); 
+						image_src->put_pixel(x, y, pixel_dst); 
+						image_src->put_pixel(x + 1, y, pixel_dst); 
+						image_src->put_pixel(x - 1, y + 1, pixel_dst); 
+						image_src->put_pixel(x, y + 1, pixel_dst); 
+						image_src->put_pixel(x + 1, y + 1, pixel_dst); 
+				}
+			}
+		}
+		// Unlock the image
+		if (SDL_MUSTLOCK(image_tmp->get_image())) {
+			SDL_UnlockSurface(image_tmp->get_image());
+		}
+
+		// Free the temporary memory
+		delete image_tmp;
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
 
 
 
@@ -545,11 +600,16 @@ void dilation(image_io* image_src, int dilate_n) {
 						// Pack the color averages back into a single pixel
 						Uint32 pixel_dst = pack_RGB(0x00, 0x00, 0x00);
 
-						image_src->put_pixel(x - 1, y, pixel_dst); 
+						// Fill in a 3x3 mask of pixels
+						image_src->put_pixel(x - 1, y - 1, pixel_dst); 
 						image_src->put_pixel(x, y - 1, pixel_dst); 
+						image_src->put_pixel(x + 1, y - 1, pixel_dst); 
+						image_src->put_pixel(x - 1, y, pixel_dst); 
 						image_src->put_pixel(x, y, pixel_dst); 
 						image_src->put_pixel(x + 1, y, pixel_dst); 
+						image_src->put_pixel(x - 1, y + 1, pixel_dst); 
 						image_src->put_pixel(x, y + 1, pixel_dst); 
+						image_src->put_pixel(x + 1, y + 1, pixel_dst); 
 				}
 			}
 		}
