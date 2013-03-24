@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
@@ -319,6 +320,191 @@ void hist_eq(image_io* image_src) {
 
 	return;
 }
+
+
+// Convert an image into a binary (black/white) image splitting at the threshold. All pixels equal to or greater than the threshold will be turned white, all pixels below will be black
+void threshold(image_io* image_src, Uint32 threshold) {
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+
+	Uint32 gray_value, bw_value;
+
+
+	// Iterate through every pixel
+	for (int y = 0; y < image_src->get_image()->h; y++) {
+		gray_value = 0;
+
+		for (int x = 0; x < image_src->get_image()->w; x++) {
+			Uint32 pixel_src = image_src->get_pixel(x, y);
+
+			// Get the gray value of each pixel
+			gray_value = RGB_to_gray(pixel_src);
+
+			bw_value = (gray_value >= threshold)?0xFF:0x00;
+
+			Uint32 pixel_dst = pack_RGB(bw_value, bw_value, bw_value); 
+
+			image_src->put_pixel(x, y, pixel_dst);
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+
+
+	return;
+}
+
+
+// Edge detection using the Sobel Gradient
+void sobel_gradient(image_io* image_src) {
+	// Create a copy for use in algorithms
+	image_io* image_tmp = new image_io(image_src);
+
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_LockSurface(image_tmp->get_image());
+	}
+
+
+	// Iterate through every pixel, skip the outer edges
+	for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+
+
+			// Variable to hold the pixel average throughout the neighborhood
+			int gray_value_sum_x = 0;
+			int gray_value_sum_y = 0;
+			int gray_value_sum_xy = 0;
+
+			// Sobel mask in the x-direction
+			static int sobel_mask_x[] = {-1, 0, 1,
+								-2, 0, 2,
+								-1, 0, 1};
+
+			// Sobel mask in the y-direction
+			static int sobel_mask_y[] = {-1, -2, -1,
+								0, 0, 0,
+								1, 2, 1};
+
+			// Iterate through the neighborhood
+			for (int u = -1; u + 1 < 3; u++) {
+				for (int v = -1; v + 1 < 3; v++) {
+					Uint32 pixel_src = image_tmp->get_pixel(x + u, y + v);
+
+					// Get the gray value of each pixel
+					Uint32 gray_value = RGB_to_gray(pixel_src);
+					
+					// Iterate through the 9 pixels in the neighborhood
+					// Each has a weight determined by the Sobel mask
+					gray_value_sum_x += sobel_mask_x[(u + 1) + 3*(v + 1)]*gray_value;
+					gray_value_sum_y += sobel_mask_y[(u + 1) + 3*(v + 1)]*gray_value;
+				}
+			}
+
+			// Combine the x and y gradients with Pythagorean theorem
+			gray_value_sum_xy = sqrt(pow(gray_value_sum_x, 2) + pow(gray_value_sum_y, 2));
+
+			// Pack the color averages back into a single pixel
+			Uint32 pixel_dst = pack_RGB(gray_value_sum_xy, gray_value_sum_xy, gray_value_sum_xy);
+
+			image_src->put_pixel(x, y, pixel_dst); 
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_UnlockSurface(image_tmp->get_image());
+	}
+
+	// Free the temporary memory
+	delete image_tmp;
+
+
+	return;
+}
+
+
+// Edge detection using the Sobel Gradient
+void laplacian(image_io* image_src) {
+	// Create a copy for use in algorithms
+	image_io* image_tmp = new image_io(image_src);
+
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_LockSurface(image_tmp->get_image());
+	}
+
+
+	// Iterate through every pixel, skip the outer edges
+	for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+
+
+			// Variable to hold the pixel average throughout the neighborhood
+			int gray_value_sum = 0;
+
+			// Sobel mask in the x-direction
+			static int laplacian_mask[] = {0, 1, 0,
+											1, -4, 1,
+											0, 1, 0};
+
+			// Iterate through the neighborhood
+			for (int u = -1; u + 1 < 3; u++) {
+				for (int v = -1; v + 1 < 3; v++) {
+					Uint32 pixel_src = image_tmp->get_pixel(x + u, y + v);
+
+					// Get the gray value of each pixel
+					Uint32 gray_value = RGB_to_gray(pixel_src);
+					
+					// Iterate through the 9 pixels in the neighborhood
+					// Each has a weight determined by the Sobel mask
+					gray_value_sum += laplacian_mask[(u + 1) + 3*(v + 1)]*gray_value;
+				}
+			}
+
+			// Pack the color averages back into a single pixel
+			Uint32 pixel_dst = pack_RGB(gray_value_sum, gray_value_sum, gray_value_sum);
+
+			image_src->put_pixel(x, y, pixel_dst); 
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_tmp->get_image())) {
+		SDL_UnlockSurface(image_tmp->get_image());
+	}
+
+	// Free the temporary memory
+	delete image_tmp;
+
+
+	return;
+}
+
 
 
 // Convert from RGB pixel format to gray value

@@ -28,6 +28,21 @@ void smooth_median(image_io* image_src);
 // Adjust constrast with histogram equalization algorithm
 void hist_eq(image_io* image_src);
 
+// Convert an image into a binary (black/white) image splitting at the threshold. All pixels equal to or greater than the threshold will be turned white, all pixels below will be black
+void threshold(image_io* image_src, Uint32 threshold);
+
+// Edge detection using the Sobel Gradient
+void sobel_gradient(image_io* image_src);
+
+
+void laplacian(image_io* image_src);
+
+
+void erosion(image_io* image_src);
+
+
+void dilation(image_io* image_src);
+
 // Convert an RGB pixel representation to a grayscale value
 Uint8 RGB_to_gray(Uint32 RGB_pixel);
 Uint8 RGB_to_red(Uint32 RGB_pixel);

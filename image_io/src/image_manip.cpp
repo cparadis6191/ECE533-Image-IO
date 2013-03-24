@@ -10,6 +10,10 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// Initialize command line flags
+	int t_flag = 0;
+	int t_value = 0;
+	int g_flag = 0;
+	int l_flag = 0;
 	int i_flag = 0;
 	int h_flag = 0;
 
@@ -42,7 +46,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:is:hc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:glis:hc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -54,6 +58,28 @@ int main(int argc, char** argv) {
 			// Output file
 			case 'o':
 				output_file = optarg;
+				
+				break;
+
+
+			// Threshold the image
+			case 't':
+				t_flag = 1;
+				t_value = atoi(optarg);
+				
+				break;
+
+
+			// Apply a Sobel gradient to the image
+			case 'g':
+				g_flag = 1;
+				
+				break;
+
+
+			// Apply a Sobel gradient to the image
+			case 'l':
+				l_flag = 1;
 				
 				break;
 
@@ -138,15 +164,22 @@ int main(int argc, char** argv) {
 	image_io* image = new image_io(input_file);
 
 
+	// Operations in roughly ascending order of destructiveness
 	// Compose the mask and mask off specified colors
 	c_mask = (c_r_flag*M_RED | c_g_flag*M_GREEN | c_b_flag*M_BLUE);
 	if (c_flag) color_mask(image, c_mask);
-
-	// Do the the operations specified by the command line switches
 	if (i_flag) invert(image);
+
 	if (s_mean_flag) smooth_mean(image);
 	if (s_med_flag) smooth_median(image);
+
 	if (h_flag) hist_eq(image);
+
+	// Do the the operations specified by the command line switches
+	if (t_flag) threshold(image, t_value);
+
+	if (g_flag) sobel_gradient(image);
+	if (l_flag) laplacian(image);
 
 
 	// Write to a new image file
