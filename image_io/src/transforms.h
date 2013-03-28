@@ -49,6 +49,6 @@ Uint8 RGB_to_green(Uint32 RGB_pixel);
 Uint8 RGB_to_blue(Uint32 RGB_pixel);
 
 // Convert red/green/blue values back into RGB pixel representation
-Uint32 pack_RGB(Uint32 red_value, Uint32 green_value, Uint32 blue_value);
+Uint32 pack_RGB(Uint8 red_value, Uint8 green_value, Uint8 blue_value);
 
 #endif
