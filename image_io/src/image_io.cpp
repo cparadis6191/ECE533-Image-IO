@@ -52,11 +52,7 @@ image_io::~image_io() {
 SDL_Surface* image_io::get_image() { return image; }
 
 
-void image_io::read(const char* filename) {
-
-
-	return;
-}
+void image_io::read(const char* filename) { return; }
 
 
 void image_io::write(const char* filename) {

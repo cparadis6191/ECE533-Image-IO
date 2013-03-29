@@ -38,8 +38,6 @@ int main(int argc, char** argv) {
 	char* input_file = NULL;
 	char c;
 
-	opterr = 0;
-
 
 	// If no command-line arguments are passed
 	if (argc < 2) {
@@ -184,6 +182,7 @@ int main(int argc, char** argv) {
 	image_io* image = new image_io(input_file);
 
 
+	// Do the the operations specified by the command line switches
 	// Operations in roughly ascending order of destructiveness
 	// Compose the mask and mask off specified colors
 	c_mask = (c_r_flag*M_RED | c_g_flag*M_GREEN | c_b_flag*M_BLUE);
@@ -195,11 +194,11 @@ int main(int argc, char** argv) {
 
 	if (h_flag) hist_eq(image);
 
-	// Do the the operations specified by the command line switches
 	if (t_flag) threshold(image, t_value);
 	if (d_flag) dilation(image, d_value);
 	if (e_flag) erosion(image, e_value);
 
+	// Edge Detection
 	if (g_flag) sobel_gradient(image);
 	if (l_flag) laplacian(image);
 
