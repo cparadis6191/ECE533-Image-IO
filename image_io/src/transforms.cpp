@@ -117,9 +117,7 @@ void smooth_mean(image_io* image_src) {
 	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
 		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
 			// Variable to hold the pixel average throughout the neighborhood
-			R_avg = 0;
-			G_avg = 0;
-			B_avg = 0;
+			R_avg = G_avg = B_avg = 0;
 
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
@@ -359,8 +357,8 @@ void threshold(image_io* image_src, Uint32 threshold) {
 		SDL_LockSurface(image_src->get_image());
 	}
 
-	Uint32 pixel_src;
-	Uint32 pixel_dst;
+	// Holds pixel data for reading and writing
+	Uint32 pixel_src, pixel_dst;
 	Uint32 gray_value, bw_value;
 
 
@@ -421,22 +419,18 @@ void sobel_gradient(image_io* image_src) {
 	// Iterate through every pixel, skip the outer edges
 	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
 		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
-
-
 			// Variable to hold the pixel average throughout the neighborhood
-			gray_value_sum_x = 0;
-			gray_value_sum_y = 0;
-			gray_value_sum_xy = 0;
+			gray_value_sum_x = gray_value_sum_y = gray_value_sum_xy = 0;
 
 			// Sobel mask in the x-direction
 			static int sobel_mask_x[] = {-1, 0, 1,
-								-2, 0, 2,
-								-1, 0, 1};
+										-2, 0, 2,
+										-1, 0, 1};
 
 			// Sobel mask in the y-direction
 			static int sobel_mask_y[] = {-1, -2, -1,
-								0, 0, 0,
-								1, 2, 1};
+										0, 0, 0,
+										1, 2, 1};
 
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
@@ -563,7 +557,6 @@ void erosion(image_io* image_src, int erode_n) {
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
-
 	Uint32 gray_value;
 
 	int skip_erode;

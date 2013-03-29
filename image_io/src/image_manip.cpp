@@ -10,15 +10,33 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// Initialize command line flags
+	// Threshold flags
 	int t_flag = 0;
 	int t_value = 0;
+
+	// Dilation flags
 	int d_flag = 0;
 	int d_value = 0;
+
+	// Erosion flags
 	int e_flag = 0;
 	int e_value = 0;
+
+	// Sobel gradient flag
 	int g_flag = 0;
+
+	// Laplace flag
 	int l_flag = 0;
+
+	// Invert flag
 	int i_flag = 0;
+
+	// Smooth method
+	int s_med_flag = 0;
+	int s_mean_flag = 0;
+	string s_args;
+
+	// Histogram equalization flag
 	int h_flag = 0;
 
 	// Color mask flags
@@ -28,11 +46,6 @@ int main(int argc, char** argv) {
 	int c_b_flag = 0;
 	int c_mask = 0;
 	string c_args;
-
-	// Smooth method
-	int s_med_flag = 0;
-	int s_mean_flag = 0;
-	string s_args;
 
 	char* output_file = NULL;
 	char* input_file = NULL;
