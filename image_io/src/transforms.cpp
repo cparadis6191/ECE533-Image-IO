@@ -73,8 +73,8 @@ void invert(image_io* image_src) {
 
 			// Invert the color
 			pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
-							| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
-							| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
+						| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
+						| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
 
 			image_src->put_pixel(x, y, pixel_dst); 
 		}
@@ -134,8 +134,8 @@ void smooth_mean(image_io* image_src) {
 
 			// Pack the color averages back into a single pixel
 			pixel_dst = (R_avg/9 << 0)
-							| (G_avg/9 << 8)
-							| (B_avg/9 << 16);
+						| (G_avg/9 << 8)
+						| (B_avg/9 << 16);
 
 			image_src->put_pixel(x, y, pixel_dst); 
 		}
@@ -212,8 +212,8 @@ void smooth_median(image_io* image_src) {
 
 			// Pack the color medians back into a single pixel
 			pixel_dst = (R_med << 0)
-							| (G_med << 8)
-							| (B_med << 16);
+						| (G_med << 8)
+						| (B_med << 16);
 
 			image_src->put_pixel(x, y, pixel_dst); 
 		}
@@ -255,18 +255,9 @@ void hist_eq(image_io* image_src) {
 	long int green_level_integral[256];
 	long int blue_level_integral[256];
 
-	Uint8 red_value;
-	Uint8 green_value;
-	Uint8 blue_value;
-
-	// Use the integral as the transfer function of each pixel
-	Uint32 red_value_unscaled;
-	Uint32 green_value_unscaled;
-	Uint32 blue_value_unscaled;
-
-	Uint32 red_value_scaled;
-	Uint32 green_value_scaled;
-	Uint32 blue_value_scaled;
+	Uint8 red_value, green_value, blue_value;
+	Uint32 red_value_unscaled, green_value_unscaled, blue_value_unscaled;
+	Uint32 red_value_scaled, green_value_scaled, blue_value_scaled;
 
 	for (int i = 0; i <= 255; i++) {
 		red_level_sum[i] = 0;
@@ -412,9 +403,7 @@ void sobel_gradient(image_io* image_src) {
 	// Get the gray value of each pixel
 	Uint32 gray_value;
 
-	int gray_value_sum_x;
-	int gray_value_sum_y;
-	int gray_value_sum_xy;
+	int gray_value_sum_x, gray_value_sum_y, gray_value_sum_xy;
 
 	// Iterate through every pixel, skip the outer edges
 	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
@@ -557,9 +546,9 @@ void erosion(image_io* image_src, int erode_n) {
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
-	Uint32 gray_value;
+	Uint8 gray_value;
 
-	int skip_erode;
+	int erode_flag;
 
 	for (int n = 0; n < erode_n; n++) {
 		// Create a copy for use in algorithms
@@ -574,7 +563,7 @@ void erosion(image_io* image_src, int erode_n) {
 		// Iterate through every pixel, skip the outer edges
 		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
 			for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
-				skip_erode = 0;
+				erode_flag = 0;
 
 				// Iterate through the neighborhood
 				for (int u = -1; u + 1 < 3; u++) {
@@ -585,14 +574,14 @@ void erosion(image_io* image_src, int erode_n) {
 						gray_value = RGB_to_gray(pixel_src);
 						
 						if (gray_value == 0xFF) {
-							skip_erode = 1;
+							erode_flag = 1;
 						}
 					}
 				}
 
-				if (!skip_erode) {
+				if (erode_flag) {
 					// Pack the color averages back into a single pixel
-					pixel_dst = pack_RGB(0x00, 0x00, 0x00);
+					pixel_dst = pack_RGB(0xFF, 0xFF, 0xFF);
 
 					image_src->put_pixel(x, y, pixel_dst); 
 				}
@@ -633,7 +622,7 @@ void dilation(image_io* image_src, int dilate_n) {
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
 
-	Uint32 gray_value;
+	Uint8 gray_value;
 
 	for (int n = 0; n < dilate_n; n++) {
 		// Create a copy for use in algorithms
@@ -646,23 +635,23 @@ void dilation(image_io* image_src, int dilate_n) {
 
 
 		// Iterate through every pixel, skip the outer edges
-		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
-			for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
+			for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
 				pixel_src = image_tmp->get_pixel(x, y);
-
-				// Pack the color averages back into a single pixel
-				pixel_dst = pack_RGB(0x00, 0x00, 0x00);
-
 
 				// Get the gray value of each pixel
 				gray_value = RGB_to_gray(pixel_src);
+
+
+				// Pack the color averages back into a single pixel
+				pixel_dst = pack_RGB(0x00, 0x00, 0x00);
 
 				if (gray_value == 0x00) {
 					// Iterate through the neighborhood
 					for (int u = -1; u + 1 < 3; u++) {
 						for (int v = -1; v + 1 < 3; v++) {
 							// Fill in a 3x3 mask of pixels
-							image_src->put_pixel(x - u, y - v, pixel_dst); 
+							image_src->put_pixel(x + u, y + v, pixel_dst); 
 						}
 					}
 				}
@@ -694,7 +683,7 @@ void dilation(image_io* image_src, int dilate_n) {
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
 Uint8 RGB_to_gray(Uint32 RGB_pixel) {
 	// This math shouldn't grow greater than 255 so checking for saturation/overflow isn't necessary
-	Uint32 gray_value = .299*((RGB_pixel >> 0) & 0xFF)
+	Uint32 gray_value = .3*((RGB_pixel >> 0) & 0xFF)
 					+ .587*((RGB_pixel >> 8) & 0xFF)
 					+ .114*((RGB_pixel >> 16) & 0xFF);
 
