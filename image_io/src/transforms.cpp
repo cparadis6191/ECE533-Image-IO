@@ -492,7 +492,7 @@ void laplacian(image_io* image_src) {
 			// Variable to hold the pixel average throughout the neighborhood
 			gray_value_sum = 0;
 
-			// Sobel mask in the x-direction
+			// Laplace mask
 			static int laplacian_mask[] = {0, 1, 0,
 											1, -4, 1,
 											0, 1, 0};
@@ -506,7 +506,6 @@ void laplacian(image_io* image_src) {
 					gray_value = RGB_to_gray(pixel_src);
 					
 					// Iterate through the 9 pixels in the neighborhood
-					// Each has a weight determined by the Sobel mask
 					gray_value_sum += laplacian_mask[(u + 1) + 3*(v + 1)]*gray_value;
 				}
 			}
