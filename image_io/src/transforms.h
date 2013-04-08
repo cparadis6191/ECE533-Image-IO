@@ -42,6 +42,11 @@ void erosion(image_io* image_src, int erode_n);
 // Enlarge the iamge by n pixels
 void dilation(image_io* image_src, int dilate_n);
 
+// Compute the perimeter
+int perimiter(image_io* image_src);
+// Compute the area
+int area(image_io* image_src);
+
 // Convert an RGB pixel representation to a grayscale value
 Uint8 RGB_to_gray(Uint32 RGB_pixel);
 Uint8 RGB_to_red(Uint32 RGB_pixel);

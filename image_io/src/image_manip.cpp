@@ -28,6 +28,9 @@ int main(int argc, char** argv) {
 	// Laplace flag
 	int l_flag = 0;
 
+	// Perimiter flag
+	int p_flag = 0;
+
 	// Invert flag
 	int i_flag = 0;
 
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:t:d:e:glis:hc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:d:e:glpis:hc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -111,6 +114,13 @@ int main(int argc, char** argv) {
 			// Apply a Sobel gradient to the image
 			case 'l':
 				l_flag = 1;
+				
+				break;
+
+
+			// Compute the perimiter of the object
+			case 'p':
+				p_flag = 1;
 				
 				break;
 
@@ -210,6 +220,9 @@ int main(int argc, char** argv) {
 	if (t_flag) threshold(image, t_value);
 	if (d_flag) dilation(image, d_value);
 	if (e_flag) erosion(image, e_value);
+	if (p_flag) {
+		cout << perimiter(image);
+	}
 
 	// Edge Detection
 	if (g_flag) sobel_gradient(image);

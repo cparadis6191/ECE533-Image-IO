@@ -678,6 +678,101 @@ void dilation(image_io* image_src, int dilate_n) {
 }
 
 
+// Compute the perimeter
+int perimiter(image_io* image_src) {
+	// Create a copy for use in algorithms
+	image_io* image_eroded = new image_io(image_src);
+
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+	// Lock the image
+	if (SDL_MUSTLOCK(image_eroded->get_image())) {
+		SDL_LockSurface(image_eroded->get_image());
+	}
+
+
+	// Erode the image, take difference between eroded and normal and sum
+	erosion(image_eroded, 1);
+
+	// Holds pixel data for reading and writing
+	Uint32 pixel_src, pixel_src_eroded;
+	Uint32 pixel_src_gray, pixel_src_gray_eroded;
+	int perimiter_sum = 0;
+
+	// Iterate through every pixel, skip the outer edges
+	for (int x = 1; x < image_eroded->get_image()->w - 1; x++) {
+		for (int y = 1; y < image_eroded->get_image()->h - 1; y++) {
+			pixel_src = image_src->get_pixel(x, y);
+			pixel_src_eroded = image_eroded->get_pixel(x, y);
+			
+			pixel_src_gray = RGB_to_gray(pixel_src);
+			pixel_src_gray_eroded = RGB_to_gray(pixel_src_eroded);
+
+			// If pixels are different they must be part of the perimiter
+			if (abs(pixel_src_gray - pixel_src_gray_eroded)) {
+				perimiter_sum++;
+			}
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_eroded->get_image())) {
+		SDL_UnlockSurface(image_eroded->get_image());
+	}
+
+	// Free the temporary memory
+	delete image_eroded;
+
+
+	return perimiter_sum;
+}
+
+
+// Compute the area
+int area(image_io* image_src) {
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+
+
+	// Holds pixel data for reading and writing
+	Uint32 pixel_src;
+	Uint32 pixel_src_gray;
+	int area_sum = 0;
+
+	// Iterate through every pixel, skip the outer edges
+	for (int x = 1; x < image_src->get_image()->w - 1; x++) {
+		for (int y = 1; y < image_src->get_image()->h - 1; y++) {
+			pixel_src = image_src->get_pixel(x, y);
+			
+			pixel_src_gray = RGB_to_gray(pixel_src);
+
+			// If pixels are different they must be part of the perimiter
+			if (pixel_src_gray) {
+				area_sum++;
+			}
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+
+
+	return area_sum;
+}
+
+
 // Convert from RGB pixel format to gray value
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
 Uint8 RGB_to_gray(Uint32 RGB_pixel) {
