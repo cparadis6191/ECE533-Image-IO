@@ -572,7 +572,7 @@ void erosion(image_io* image_src, int erode_n) {
 						// Get the gray value of each pixel
 						gray_value = RGB_to_gray(pixel_src);
 						
-						if (gray_value == 0xFF) {
+						if (gray_value != 0x00) {
 							erode_flag = 1;
 						}
 					}
@@ -748,15 +748,15 @@ int area(image_io* image_src) {
 	Uint32 pixel_src_gray;
 	int area_sum = 0;
 
-	// Iterate through every pixel, skip the outer edges
+	// Iterate through every pixel
 	for (int x = 1; x < image_src->get_image()->w - 1; x++) {
 		for (int y = 1; y < image_src->get_image()->h - 1; y++) {
 			pixel_src = image_src->get_pixel(x, y);
 			
 			pixel_src_gray = RGB_to_gray(pixel_src);
 
-			// If pixels are different they must be part of the perimiter
-			if (pixel_src_gray) {
+			// If a pixel is black, add it to the sum
+			if (!pixel_src_gray) {
 				area_sum++;
 			}
 		}
@@ -770,6 +770,155 @@ int area(image_io* image_src) {
 
 
 	return area_sum;
+}
+
+
+// Compute the moments
+// Mij = ExEy x^i*y^j*I(x, y)
+double** moment(image_io* image_src) {
+	// Lock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_LockSurface(image_src->get_image());
+	}
+
+
+	// Holds pixel data for reading and writing
+	Uint32 pixel_src, gray_value;
+
+	// Need to compute M00, M01, M02, M03
+	// M10, M20, M30
+	// M11, M12, M21
+	double** moments = new double*[4];
+	for (int i = 0; i < 4; i++) {
+		// double[4]() initializes values to zero
+		moments[i] = new double[4]();
+	}
+
+	// Iterate through every pixel
+	for (int x = 0; x < image_src->get_image()->w; x++) {
+		for (int y = 0; y < image_src->get_image()->h; y++) {
+			pixel_src = image_src->get_pixel(x, y);
+
+			// Get the gray value of each pixel
+			// Subtract from 255 to moments of the black pixels
+			gray_value = 255 - RGB_to_gray(pixel_src);
+
+			moments[0][0] += gray_value;
+			moments[0][1] += gray_value*y;
+			moments[0][2] += gray_value*y*y;
+			moments[0][3] += gray_value*y*y*y;
+			moments[1][0] += gray_value*x;
+			moments[2][0] += gray_value*x*x;
+			moments[3][0] += gray_value*x*x*x;
+			moments[1][1] += gray_value*x*y;
+			moments[1][2] += gray_value*x*y*y;
+			moments[2][1] += gray_value*x*x*y;
+		}
+	}
+
+
+	// Unlock the image
+	if (SDL_MUSTLOCK(image_src->get_image())) {
+		SDL_UnlockSurface(image_src->get_image());
+	}
+
+
+	return moments;
+}
+
+
+// Compute the centroid from the moment
+// Returns an array of two (x, y)
+// M is a 4x4 matrix containing values of the moments
+double* centroid(double** M) {
+	// Allocate memory for the centroid value
+	double* C =  new double[2];
+
+	// Compute the x and y components of the centroid
+	C[0] = M[1][0]/M[0][0];
+	C[1] = M[0][1]/M[0][0];
+
+	return C;
+}
+
+
+// Compute the central_moments
+// Returns an array of the central moments
+double** central_moments(double** M, double* C) {
+	// u represents the greek letter mu
+	double** u = new double*[4];
+	for (int i = 0; i < 4; i++) {
+		// double[4]() initializes values to zero
+		u[i] = new double[4]();
+	}
+
+	u[0][2] = M[0][2] - C[1]*M[0][1];
+	u[0][3] = M[0][3] - 3*C[1]*M[0][2] + 2*C[1]*C[1]*M[0][1];
+	u[2][0] = M[2][0] - C[0]*M[1][0];
+	u[3][0] = M[3][0] - 3*C[0]*M[2][0] + 2*C[0]*C[0]*M[1][0];
+	u[1][1] = M[1][1] - C[0]*M[0][1];
+	u[1][2] = M[1][2] - 2*C[1]*M[1][1] - C[0]*M[0][2] + 2*C[1]*C[1]*M[1][0];
+	u[2][1] = M[2][1] - 2*C[0]*M[1][1] - C[1]*M[2][0] + 2*C[0]*C[0]*M[0][1];
+
+
+	return u;
+}
+
+
+// Calculate the 7 moment invariants
+// u is a 4x4 matrix containing central moment values
+double* invariants(double** u) {
+	double * invariants = new double[7];
+	// n represents the greek letter eta
+	double** n = new double*[4];
+	for (int i = 0; i < 4; i++) {
+		// double[4]() initializes values to zero
+		n[i] = new double[4]();
+	}
+
+	// eta_ij = u_ij/(pow(u_00, 1 + (i + j)/2))
+	n[0][2] = u[0][2]/(pow(u[0][0], 2));
+	n[0][3] = u[0][3]/(pow(u[0][0], 2.5));
+	n[2][0] = u[2][0]/(pow(u[0][0], 2));
+	n[3][0] = u[3][0]/(pow(u[0][0], 2.5));
+	n[1][1] = u[1][1]/(pow(u[0][0], 2));
+	n[1][2] = u[1][2]/(pow(u[0][0], 2.5));
+	n[2][1] = u[2][1]/(pow(u[0][0], 2.5));
+
+	// These are the seven Hu invariants
+	// Can be found on
+	// http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
+	invariants[0] = n[2][0] + n[0][2];
+	invariants[1] = (n[2][0] - n[0][2])*(n[2][0] - n[0][2])
+				+ 4*n[1][1]*n[1][1];
+	invariants[2] = (n[3][0] - 3*n[1][2])*(n[3][0] - 3*n[1][2])
+				+ (3*n[2][1] + n[0][3])*(3*n[2][1] - n[0][3]);
+	invariants[3] = (n[3][0] - n[1][2])*(n[3][0] - n[1][2])
+				+ (n[2][1] + n[0][3])*(n[2][1] - n[0][3]);
+	invariants[4] = (n[3][0] - 3*n[1][2])*(n[3][0] - 3*n[1][2])
+				* (n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				* ((n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				- 3*(n[2][1] + n[0][3]*(n[2][1] + n[0][3])))
+
+				*(3*n[2][1] - n[0][3])*(3*n[2][1] - n[0][3])
+				* (n[2][1] + n[0][3])*(n[2][1] + n[0][3])
+				* (3*(n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				- (n[2][1] + n[0][3]*(n[2][1] + n[0][3])));
+	invariants[5] = 0;
+	// TODO
+	invariants[6] = (n[3][0] - 3*n[1][2])*(n[3][0] - 3*n[1][2])
+				* (n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				* ((n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				- 3*(n[2][1] + n[0][3]*(n[2][1] + n[0][3])))
+
+				*(3*n[2][1] - n[0][3])*(3*n[2][1] - n[0][3])
+				* (n[2][1] + n[0][3])*(n[2][1] + n[0][3])
+				* (3*(n[3][0] + n[1][2])*(n[3][0] + n[1][2])
+				- (n[2][1] + n[0][3]*(n[2][1] + n[0][3])));
+
+
+
+	return invariants;
 }
 
 

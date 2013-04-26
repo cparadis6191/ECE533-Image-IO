@@ -47,6 +47,22 @@ int perimiter(image_io* image_src);
 // Compute the area
 int area(image_io* image_src);
 
+// Compute the moment
+// Returns a 4x4 matrix
+double** moment(image_io* image_src);
+
+// Compute the centroid from the moment
+// Returns an array of two (x, y)
+double* centroid(double** M);
+
+// Compute the central_moments
+// Returns an array of the central moments
+double** central_moments(double** M, double* C);
+
+// Calculate the 7 moment invariants
+// u is a 4x4 matrix containing central moment values
+double* invariants(double** u);
+
 // Convert an RGB pixel representation to a grayscale value
 Uint8 RGB_to_gray(Uint32 RGB_pixel);
 Uint8 RGB_to_red(Uint32 RGB_pixel);
