@@ -536,6 +536,8 @@ void laplacian(image_io* image_src) {
 
 
 // Degrade the image by n pixels
+// Erodes away black objects
+// Doesn't like pngs created by MS Paint
 void erosion(image_io* image_src, int erode_n) {
 	// Lock the image
 	if (SDL_MUSTLOCK(image_src->get_image())) {
@@ -571,15 +573,19 @@ void erosion(image_io* image_src, int erode_n) {
 
 						// Get the gray value of each pixel
 						gray_value = RGB_to_gray(pixel_src);
+						printf("gray: %i\n", gray_value);
 						
+						// If pixels in the neighborhood aren't black erode
 						if (gray_value != 0x00) {
 							erode_flag = 1;
+
+							break;
 						}
 					}
 				}
 
 				if (erode_flag) {
-					// Pack the color averages back into a single pixel
+					// Change this pixel to  white
 					pixel_dst = pack_RGB(0xFF, 0xFF, 0xFF);
 
 					image_src->put_pixel(x, y, pixel_dst); 
@@ -788,10 +794,10 @@ double** moment(image_io* image_src) {
 	// Need to compute M00, M01, M02, M03
 	// M10, M20, M30
 	// M11, M12, M21
-	double** moments = new double*[4];
+	double** M = new double*[4];
 	for (int i = 0; i < 4; i++) {
 		// double[4]() initializes values to zero
-		moments[i] = new double[4]();
+		M[i] = new double[4]();
 	}
 
 	// Iterate through every pixel
@@ -803,16 +809,16 @@ double** moment(image_io* image_src) {
 			// Subtract from 255 to moments of the black pixels
 			gray_value = 255 - RGB_to_gray(pixel_src);
 
-			moments[0][0] += gray_value;
-			moments[0][1] += gray_value*y;
-			moments[0][2] += gray_value*y*y;
-			moments[0][3] += gray_value*y*y*y;
-			moments[1][0] += gray_value*x;
-			moments[2][0] += gray_value*x*x;
-			moments[3][0] += gray_value*x*x*x;
-			moments[1][1] += gray_value*x*y;
-			moments[1][2] += gray_value*x*y*y;
-			moments[2][1] += gray_value*x*x*y;
+			M[0][0] += gray_value;
+			M[0][1] += gray_value*y;
+			M[0][2] += gray_value*y*y;
+			M[0][3] += gray_value*y*y*y;
+			M[1][0] += gray_value*x;
+			M[2][0] += gray_value*x*x;
+			M[3][0] += gray_value*x*x*x;
+			M[1][1] += gray_value*x*y;
+			M[1][2] += gray_value*x*y*y;
+			M[2][1] += gray_value*x*x*y;
 		}
 	}
 
@@ -823,7 +829,7 @@ double** moment(image_io* image_src) {
 	}
 
 
-	return moments;
+	return M;
 }
 
 
@@ -869,13 +875,9 @@ double** central_moments(double** M, double* C) {
 // Calculate the 7 moment invariants
 // u is a 4x4 matrix containing central moment values
 double* invariants(double** u) {
-	double* invariants = new double[7];
 	// n represents the greek letter eta
-	double** n = new double*[4];
-	for (int i = 0; i < 4; i++) {
-		// double[4]() initializes values to zero
-		n[i] = new double[4]();
-	}
+	double n[4][4];
+	double* invariants = new double[7];
 
 	// eta_ij = u_ij/(pow(u_00, 1 + (i + j)/2))
 	n[0][2] = u[0][2]/(pow(u[0][0], 2));
@@ -929,6 +931,7 @@ double* invariants(double** u) {
 
 // Calculate the eigenvalues and eigenvectors of the covariance matrix
 double** eigen(double** M, double* C) {
+	double A[2][2];
 	double T, D;
 	double up20, up02, up11;
 
@@ -937,12 +940,6 @@ double** eigen(double** M, double* C) {
 	for (int i = 0; i < 2; i++) {
 		// double[2]() initializes values to zero
 		eigen[i] = new double[3]();
-	}
-	// Allocate space for 2x2 covariance matrix
-	double** A = new double*[2];
-	for (int i = 0; i < 2; i++) {
-		// double[2]() initializes values to zero
-		A[i] = new double[2]();
 	}
 
 	// Calculate values for the covariance matrix
@@ -1000,7 +997,7 @@ double** eigen(double** M, double* C) {
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
 Uint8 RGB_to_gray(Uint32 RGB_pixel) {
 	// This math shouldn't grow greater than 255 so checking for saturation/overflow isn't necessary
-	Uint32 gray_value = .3*((RGB_pixel >> 0) & 0xFF)
+	Uint8 gray_value = .3*((RGB_pixel >> 0) & 0xFF)
 					+ .587*((RGB_pixel >> 8) & 0xFF)
 					+ .114*((RGB_pixel >> 16) & 0xFF);
 

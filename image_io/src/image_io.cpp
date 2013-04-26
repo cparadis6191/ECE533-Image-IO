@@ -60,6 +60,7 @@ void image_io::write(const char* filename) {
 	if (SDL_SaveBMP(this->image, filename)) {
 		cout << "IMG_SaveBMP: " << IMG_GetError();
 
+
 		exit(1);
 	}
 

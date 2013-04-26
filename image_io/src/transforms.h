@@ -15,7 +15,6 @@ class image_io;
 // Choose a color to mask off
 // gray = (0.299*r + 0.587*g + 0.114*b);
 void color_mask(image_io* image_src, int mask);
-
 // Invert color intensity
 void invert(image_io* image_src);
 
@@ -33,12 +32,11 @@ void threshold(image_io* image_src, Uint32 threshold);
 
 // Edge detection using the Sobel Gradient
 void sobel_gradient(image_io* image_src);
-
+// Edge detection using Laplacian Transformt
 void laplacian(image_io* image_src);
 
 // Degrade the image by n pixels
 void erosion(image_io* image_src, int erode_n);
-
 // Enlarge the iamge by n pixels
 void dilation(image_io* image_src, int dilate_n);
 
@@ -64,6 +62,7 @@ double** central_moments(double** M, double* C);
 double* invariants(double** u);
 
 // Calculate the eigenvalues and eigenvectors of the covariance matrix
+// Returns 2x3 matrix
 double** eigen(double** M, double* C);
 
 // Convert an RGB pixel representation to a grayscale value

@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:t:d:r:glpamveis:hc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:d:r:glpamveishc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -269,6 +269,8 @@ int main(int argc, char** argv) {
 		double** moment_results = moment(image);
 		double* centroid_results = centroid(moment_results);
 		double** central_moment_results = central_moments(moment_results, centroid_results);
+		double* invariant_results;
+		double** eigen_results;
 		
 		if (m_flag) {
 			cout << "M00 is: " << moment_results[0][0] << endl;
@@ -281,8 +283,10 @@ int main(int argc, char** argv) {
 			cout << "M11 is: " << moment_results[1][1] << endl;
 			cout << "M12 is: " << moment_results[1][2] << endl;
 			cout << "M21 is: " << moment_results[2][1] << endl;
+
 			cout << "Centroid is: (" << centroid_results[0] << ", ";
 			cout << centroid_results[1] << ")" << endl;
+
 			cout << "U00 is: " << central_moment_results[0][0] << endl;
 			cout << "U02 is: " << central_moment_results[0][2] << endl;
 			cout << "U03 is: " << central_moment_results[0][3] << endl;
@@ -294,7 +298,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (v_flag) {
-			double* invariant_results = invariants(central_moment_results);
+			invariant_results = invariants(central_moment_results);
 
 			cout << "I0 is: " << invariant_results[0] << endl;
 			cout << "I1 is: " << invariant_results[1] << endl;
@@ -303,17 +307,35 @@ int main(int argc, char** argv) {
 			cout << "I4 is: " << invariant_results[4] << endl;
 			cout << "I5 is: " << invariant_results[5] << endl;
 			cout << "I6 is: " << invariant_results[6] << endl;
+
+			delete[] invariant_results;
 		}
 		
 		if (e_flag) {
-			double** eigen_results = eigen(moment_results, centroid_results);
+			eigen_results = eigen(moment_results, centroid_results);
 
 			cout << "L1 is: " << eigen_results[0][0] << endl;
 			cout << "L2 is: " << eigen_results[1][0] << endl;
+
 			cout << "V1 is: (" << eigen_results[0][1] << ", " << eigen_results[0][2] << ")" << endl;
 			cout << "V2 is: (" << eigen_results[1][1] << ", " << eigen_results[1][2] << ")" << endl;
 
+			for (int i = 0; i < 2; i++) {
+				delete[] eigen_results[i];
+			}
+			delete[] eigen_results;
 		}
+
+		// Free memory C-style!
+		for (int i = 0; i < 4; i++) {
+			delete[] moment_results[i];
+			delete[] central_moment_results[i];
+		}
+
+
+		delete[] moment_results;
+		delete[] central_moment_results;
+		delete[] centroid_results;
 	}
 
 	// Edge Detection
