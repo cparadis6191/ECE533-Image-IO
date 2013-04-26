@@ -255,32 +255,45 @@ int main(int argc, char** argv) {
 	if (a_flag) {
 		cout << "Area is: " << area(image) << endl;
 	}
-	if (m_flag) {
+	if (m_flag || v_flag) {
 		double** moment_results = moment(image);
 		double* centroid_results = centroid(moment_results);
 		double** central_moment_results = central_moments(moment_results, centroid_results);
-		cout << "M00 is: " << moment_results[0][0] << endl;
-		cout << "M01 is: " << moment_results[0][1] << endl;
-		cout << "M02 is: " << moment_results[0][2] << endl;
-		cout << "M03 is: " << moment_results[0][3] << endl;
-		cout << "M10 is: " << moment_results[1][0] << endl;
-		cout << "M20 is: " << moment_results[2][0] << endl;
-		cout << "M30 is: " << moment_results[3][0] << endl;
-		cout << "M11 is: " << moment_results[1][1] << endl;
-		cout << "M12 is: " << moment_results[1][2] << endl;
-		cout << "M21 is: " << moment_results[2][1] << endl;
-		cout << "Centroid is: (" << centroid_results[0] << ", ";
-		cout << centroid_results[1] << ")" << endl;
-		cout << "U02 is: " << central_moment_results[0][2] << endl;
-		cout << "U03 is: " << central_moment_results[0][3] << endl;
-		cout << "U20 is: " << central_moment_results[2][0] << endl;
-		cout << "U30 is: " << central_moment_results[3][0] << endl;
-		cout << "U11 is: " << central_moment_results[1][1] << endl;
-		cout << "U12 is: " << central_moment_results[1][2] << endl;
-		cout << "U21 is: " << central_moment_results[2][1] << endl;
-	}
-	if (v_flag) {
-		//double** invariant_results = invariants(
+		
+		if (m_flag) {
+			cout << "M00 is: " << moment_results[0][0] << endl;
+			cout << "M01 is: " << moment_results[0][1] << endl;
+			cout << "M02 is: " << moment_results[0][2] << endl;
+			cout << "M03 is: " << moment_results[0][3] << endl;
+			cout << "M10 is: " << moment_results[1][0] << endl;
+			cout << "M20 is: " << moment_results[2][0] << endl;
+			cout << "M30 is: " << moment_results[3][0] << endl;
+			cout << "M11 is: " << moment_results[1][1] << endl;
+			cout << "M12 is: " << moment_results[1][2] << endl;
+			cout << "M21 is: " << moment_results[2][1] << endl;
+			cout << "Centroid is: (" << centroid_results[0] << ", ";
+			cout << centroid_results[1] << ")" << endl;
+			cout << "U00 is: " << central_moment_results[0][0] << endl;
+			cout << "U02 is: " << central_moment_results[0][2] << endl;
+			cout << "U03 is: " << central_moment_results[0][3] << endl;
+			cout << "U20 is: " << central_moment_results[2][0] << endl;
+			cout << "U30 is: " << central_moment_results[3][0] << endl;
+			cout << "U11 is: " << central_moment_results[1][1] << endl;
+			cout << "U12 is: " << central_moment_results[1][2] << endl;
+			cout << "U21 is: " << central_moment_results[2][1] << endl;
+		}
+
+		if (v_flag) {
+			double* invariant_results = invariants(central_moment_results);
+
+			cout << "I0 is: " << invariant_results[0] << endl;
+			cout << "I1 is: " << invariant_results[1] << endl;
+			cout << "I2 is: " << invariant_results[2] << endl;
+			cout << "I3 is: " << invariant_results[3] << endl;
+			cout << "I4 is: " << invariant_results[4] << endl;
+			cout << "I5 is: " << invariant_results[5] << endl;
+			cout << "I6 is: " << invariant_results[6] << endl;
+		}
 	}
 
 	// Edge Detection
