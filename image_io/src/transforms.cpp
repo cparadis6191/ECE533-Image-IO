@@ -573,7 +573,6 @@ void erosion(image_io* image_src, int erode_n) {
 
 						// Get the gray value of each pixel
 						gray_value = RGB_to_gray(pixel_src);
-						printf("gray: %i\n", gray_value);
 						
 						// If pixels in the neighborhood aren't black erode
 						if (gray_value != 0x00) {

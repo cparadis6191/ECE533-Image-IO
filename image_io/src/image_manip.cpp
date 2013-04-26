@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:t:d:r:glpamveishc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:d:r:glpamveis:hc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
