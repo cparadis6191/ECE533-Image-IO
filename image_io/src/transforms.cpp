@@ -927,6 +927,75 @@ double* invariants(double** u) {
 }
 
 
+// Calculate the eigenvalues and eigenvectors of the covariance matrix
+double** eigen(double** M, double* C) {
+	double T, D;
+	double up20, up02, up11;
+
+	// Allocate space for eigen results
+	double** eigen = new double*[2];
+	for (int i = 0; i < 2; i++) {
+		// double[2]() initializes values to zero
+		eigen[i] = new double[3]();
+	}
+	// Allocate space for 2x2 covariance matrix
+	double** A = new double*[2];
+	for (int i = 0; i < 2; i++) {
+		// double[2]() initializes values to zero
+		A[i] = new double[2]();
+	}
+
+	// Calculate values for the covariance matrix
+	up20 = M[2][0]/M[0][0] - C[0]*C[0];
+	up02 = M[0][2]/M[0][0] - C[1]*C[1];
+	up11 = M[1][1]/M[0][0] - C[0]*C[1];
+
+	// Populate the covariance matrix
+	A[0][0] = up20;
+	A[0][1] = up11;
+	A[1][0] = up11;
+	A[1][1] = up02;
+
+	// Intermediate value
+	T = A[0][0] + A[1][1];
+	D = A[0][0]*A[1][1] - A[0][1]*A[1][0];
+
+	// Calculate the eigenvalues
+	eigen[0][0] = T/2 + sqrt(((T*T)/4 - D));
+	eigen[1][0] = T/2 - sqrt(((T*T)/4 - D));
+
+	// If c isn't zero
+	if (A[1][0] != 0) {
+		// (L1 - d, c)
+		eigen[0][1] = eigen[0][0] - A[1][1];
+		eigen[0][2] = A[1][0];
+
+		// (L2 - d, c)
+		eigen[1][1] = eigen[1][0] - A[1][1];
+		eigen[1][2] = A[1][0];
+
+	// If b isn't zero
+	} else if (A[0][1] != 0) {
+		// (b, L1 - a)
+		eigen[0][1] = A[0][1];
+		eigen[0][2] = eigen[0][0] - A[0][0];
+
+		// (b, L2 - a)
+		eigen[1][1] = A[0][1];
+		eigen[1][2] = eigen[1][0] - A[0][0];
+	} else {
+		eigen[0][1] = 1;
+		eigen[0][2] = 0;
+
+		eigen[1][1] = 0;
+		eigen[1][2] = 1;
+	}
+	
+	
+	return eigen;
+}
+
+
 // Convert from RGB pixel format to gray value
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
 Uint8 RGB_to_gray(Uint32 RGB_pixel) {

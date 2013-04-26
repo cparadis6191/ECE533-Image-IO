@@ -63,6 +63,9 @@ double** central_moments(double** M, double* C);
 // u is a 4x4 matrix containing central moment values
 double* invariants(double** u);
 
+// Calculate the eigenvalues and eigenvectors of the covariance matrix
+double** eigen(double** M, double* C);
+
 // Convert an RGB pixel representation to a grayscale value
 Uint8 RGB_to_gray(Uint32 RGB_pixel);
 Uint8 RGB_to_red(Uint32 RGB_pixel);

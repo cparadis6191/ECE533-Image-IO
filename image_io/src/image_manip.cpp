@@ -19,8 +19,8 @@ int main(int argc, char** argv) {
 	int d_value = 0;
 
 	// Erosion flags
-	int e_flag = 0;
-	int e_value = 0;
+	int r_flag = 0;
+	int r_value = 0;
 
 	// Sobel gradient flag
 	int g_flag = 0;
@@ -39,6 +39,9 @@ int main(int argc, char** argv) {
 
 	// Invariant flag
 	int v_flag = 0;
+
+	// Eigen flag
+	int e_flag = 0;
 
 	// Invert flag
 	int i_flag = 0;
@@ -73,7 +76,7 @@ int main(int argc, char** argv) {
 
 
 	// Parse through all the arguments
-	while ((c = getopt(argc, argv, "f:o:t:d:e:glpamvis:hc:")) != -1) {
+	while ((c = getopt(argc, argv, "f:o:t:d:r:glpamveis:hc:")) != -1) {
 		switch (c) {
 			// Input file
 			case 'f':
@@ -106,9 +109,9 @@ int main(int argc, char** argv) {
 
 
 			// Erode the image
-			case 'e':
-				e_flag = 1;
-				e_value = atoi(optarg);
+			case 'r':
+				r_flag = 1;
+				r_value = atoi(optarg);
 				
 				break;
 
@@ -150,6 +153,13 @@ int main(int argc, char** argv) {
 			// Compute the moment invariants of the object
 			case 'v':
 				v_flag = 1;
+				
+				break;
+
+
+			// Compute the Eigen values and vectors
+			case 'e':
+				e_flag = 1;
 				
 				break;
 
@@ -248,14 +258,14 @@ int main(int argc, char** argv) {
 
 	if (t_flag) threshold(image, t_value);
 	if (d_flag) dilation(image, d_value);
-	if (e_flag) erosion(image, e_value);
+	if (r_flag) erosion(image, r_value);
 	if (p_flag) {
 		cout << "Perimiter is: " << perimiter(image) << endl;
 	}
 	if (a_flag) {
 		cout << "Area is: " << area(image) << endl;
 	}
-	if (m_flag || v_flag) {
+	if (m_flag || v_flag || e_flag) {
 		double** moment_results = moment(image);
 		double* centroid_results = centroid(moment_results);
 		double** central_moment_results = central_moments(moment_results, centroid_results);
@@ -293,6 +303,16 @@ int main(int argc, char** argv) {
 			cout << "I4 is: " << invariant_results[4] << endl;
 			cout << "I5 is: " << invariant_results[5] << endl;
 			cout << "I6 is: " << invariant_results[6] << endl;
+		}
+		
+		if (e_flag) {
+			double** eigen_results = eigen(moment_results, centroid_results);
+
+			cout << "L1 is: " << eigen_results[0][0] << endl;
+			cout << "L2 is: " << eigen_results[1][0] << endl;
+			cout << "V1 is: (" << eigen_results[0][1] << ", " << eigen_results[0][2] << ")" << endl;
+			cout << "V2 is: (" << eigen_results[1][1] << ", " << eigen_results[1][2] << ")" << endl;
+
 		}
 	}
 
