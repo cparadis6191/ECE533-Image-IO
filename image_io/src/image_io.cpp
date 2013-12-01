@@ -90,9 +90,9 @@ Uint32 image_io::get_pixel(int x, int y) {
 
 		case 3:
 			if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-			return ((p[0] << 16) | (p[1] << 8) | p[2]);
+				return ((p[0] << 16) | (p[1] << 8) | p[2]);
 			else
-			return (p[0] | (p[1] << 8) | (p[2] << 16));
+				return (p[0] | (p[1] << 8) | (p[2] << 16));
 
 			break;
 
