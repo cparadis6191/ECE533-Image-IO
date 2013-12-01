@@ -1,6 +1,6 @@
 TARGET = image_manip
 OBJS = image_manip.o image_io.o transforms.o
-CPPFLAGS = -g -Wall -O3
+CPPFLAGS = -O3 -g -Wall -Wextra
 LDFLAGS = `sdl-config --cflags --libs` -lSDL_image -lstdc++
 .PHONY:clean
 
