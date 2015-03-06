@@ -26,6 +26,8 @@ Original image taken from [Wikipedia.org](http://en.wikipedia.org/wiki/South_Chi
 
 ![Original image](https://github.com/cparadis6191/ECE533-Image-Manip/blob/master/examples/tiger.jpg)
 
+Input can be in a variety of formats. Output files are bitmaps but have been converted to jpgs for size reasons.
+
 ```bash
 ./image_manip -f tiger.jpg -o histogram.jpg -h
 ```
@@ -52,7 +54,7 @@ Original image taken from [Wikipedia.org](http://en.wikipedia.org/wiki/South_Chi
 ![Color masking](https://github.com/cparadis6191/ECE533-Image-Manip/blob/master/examples/red.jpg)
 
 ```bash
-./image_manip -f tiger.jpg -o red.jpg -cgb
+./image_manip -f tiger.jpg -o invert.jpg -i
 ```
 ![Color inversion](https://github.com/cparadis6191/ECE533-Image-Manip/blob/master/examples/invert.jpg)
 
