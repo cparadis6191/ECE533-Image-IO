@@ -4,18 +4,29 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <array>
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
 using namespace std;
 
-void color_mask(image_io* image_src, int c_mask) {
+locker::locker(image_io& image_src) : m_image(image_src) {
 	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
+	if (SDL_MUSTLOCK(m_image.get_image())) {
+		SDL_LockSurface(m_image.get_image());
 	}
+}
 
+locker::~locker() {
+	// Unlock the image
+	if (SDL_MUSTLOCK(m_image.get_image())) {
+		SDL_UnlockSurface(m_image.get_image());
+	}
+}
+
+void color_mask(image_io& image_src, int c_mask) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -23,11 +34,11 @@ void color_mask(image_io* image_src, int c_mask) {
 	Uint32 red_value, green_value, blue_value;
 
 	// Iterate through every pixel
-	for (int x = 0; x < image_src->get_image()->w; x++) {
+	for (int x = 0; x < image_src.get_image()->w; x++) {
 		red_value = green_value = blue_value = 0;
 
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			// Strip colors depending on c_mask
 			if (((c_mask & M_RED) != M_RED)) red_value = RGB_to_red(pixel_src);
@@ -39,71 +50,40 @@ void color_mask(image_io* image_src, int c_mask) {
 				red_value = green_value = blue_value = RGB_to_gray(pixel_src);
 			}
 
-			pixel_dst = pack_RGB(red_value, green_value, blue_value); 
+			pixel_dst = pack_RGB(red_value, green_value, blue_value);
 
-			image_src->put_pixel(x, y, pixel_dst);
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-	return;
 }
 
-
-void invert(image_io* image_src) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+void invert(image_io& image_src) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
 
 	// Iterate through every pixel
-	for (int x = 0; x < image_src->get_image()->w; x++) {
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+	for (int x = 0; x < image_src.get_image()->w; x++) {
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			// Invert the color
 			pixel_dst = ((255 - ((pixel_src >> 0) & 0xFF)) << 0)
 						| ((255 - ((pixel_src >> 8) & 0xFF)) << 8)
 						| ((255 - ((pixel_src >> 16) & 0xFF)) << 16);
 
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-	return;
 }
 
-
-void smooth_mean(image_io* image_src) {
+void smooth_mean(image_io& image_src) {
 	// Create a copy for use in algorithms
-	image_io* image_tmp = new image_io(image_src);
+	image_io image_tmp(image_src);
 
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_LockSurface(image_tmp->get_image());
-	}
-
+	locker lock(image_src);
+	locker lock_tmp(image_tmp);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -114,16 +94,16 @@ void smooth_mean(image_io* image_src) {
 	int B_avg;
 
 	// Iterate through every pixel, skip the outer edges
-	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+	for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
 			// Variable to hold the pixel average throughout the neighborhood
 			R_avg = G_avg = B_avg = 0;
 
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
 				for (int v = -1; v + 1 < 3; v++) {
-					pixel_src = image_tmp->get_pixel(x + u, y + v);
-					
+					pixel_src = image_tmp.get_pixel(x + u, y + v);
+
 					// Iterate through the 9 pixels in the neighborhood
 					// Each has an equal weight of 1/9
 					R_avg += ((pixel_src >> 0) & 0xFF);
@@ -137,41 +117,17 @@ void smooth_mean(image_io* image_src) {
 						| (G_avg/9 << 8)
 						| (B_avg/9 << 16);
 
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_UnlockSurface(image_tmp->get_image());
-	}
-
-	// Free the temporary memory
-	delete image_tmp;
-
-
-	return;
 }
 
-
-void smooth_median(image_io* image_src) {
+void smooth_median(image_io& image_src) {
 	// Create a copy for use in algorithms
-	image_io* image_tmp = new image_io(image_src);
+	image_io image_tmp(image_src);
 
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_LockSurface(image_tmp->get_image());
-	}
-
+	locker lock(image_src);
+	locker lock_tmp(image_tmp);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -185,13 +141,13 @@ void smooth_median(image_io* image_src) {
 	int B_list[9];
 
 	// Iterate through every pixel, skip the outer edges
-	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+	for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
 				for (int v = -1; v + 1 < 3; v++) {
-					pixel_src = image_tmp->get_pixel(x + u, y + v);
-					
+					pixel_src = image_tmp.get_pixel(x + u, y + v);
+
 					// Iterate through the 9 pixels in the neighborhood
 					R_list[(u + 1) + 3*(v + 1)] = ((pixel_src >> 0) & 0xFF);
 					G_list[(u + 1) + 3*(v + 1)] = ((pixel_src >> 8) & 0xFF);
@@ -209,40 +165,18 @@ void smooth_median(image_io* image_src) {
 			G_med = G_list[4];
 			B_med = B_list[4];
 
-
 			// Pack the color medians back into a single pixel
 			pixel_dst = (R_med << 0)
 						| (G_med << 8)
 						| (B_med << 16);
 
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_UnlockSurface(image_tmp->get_image());
-	}
-
-	// Free the temporary memory
-	delete image_tmp;
-
-
-	return;
 }
 
-
-void hist_eq(image_io* image_src) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+void hist_eq(image_io& image_src) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -269,11 +203,10 @@ void hist_eq(image_io* image_src) {
 		blue_level_integral[i] = 0;
 	}
 
-
 	// Iterate through every pixel and measure the intensity
-	for (int x = 0; x < image_src->get_image()->w; x++) {
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+	for (int x = 0; x < image_src.get_image()->w; x++) {
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			red_value = RGB_to_red(pixel_src);
 			green_value = RGB_to_green(pixel_src);
@@ -286,7 +219,6 @@ void hist_eq(image_io* image_src) {
 			blue_level_sum[blue_value] += 1;
 		}
 	}
-
 
 	// Compute the first term of the integral
 	red_level_integral[0] = red_level_sum[0];
@@ -302,9 +234,9 @@ void hist_eq(image_io* image_src) {
 	}
 
 	// Iterate through every pixel and adjust the intensity
-	for (int x = 0; x < image_src->get_image()->w; x++) {
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+	for (int x = 0; x < image_src.get_image()->w; x++) {
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			// Separate into the red/green/blue intensities
 			red_value = RGB_to_red(pixel_src);
@@ -326,76 +258,45 @@ void hist_eq(image_io* image_src) {
 										blue_value_scaled);
 
 			// Write to the image
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-	return;
 }
 
-
 // Convert an image into a binary (black/white) image splitting at the threshold. All pixels equal to or greater than the threshold will be turned white, all pixels below will be black
-void threshold(image_io* image_src, Uint32 threshold) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
+void threshold(image_io& image_src, Uint32 threshold) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
 	Uint32 gray_value, bw_value;
 
-
 	// Iterate through every pixel
-	for (int x = 0; x < image_src->get_image()->w; x++) {
+	for (int x = 0; x < image_src.get_image()->w; x++) {
 		gray_value = 0;
 
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			// Get the gray value of each pixel
 			gray_value = RGB_to_gray(pixel_src);
 
 			bw_value = (gray_value >= threshold)?0xFF:0x00;
 
-			pixel_dst = pack_RGB(bw_value, bw_value, bw_value); 
+			pixel_dst = pack_RGB(bw_value, bw_value, bw_value);
 
-			image_src->put_pixel(x, y, pixel_dst);
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-	return;
 }
 
-
 // Edge detection using the Sobel Gradient
-void sobel_gradient(image_io* image_src) {
+void sobel_gradient(image_io& image_src) {
 	// Create a copy for use in algorithms
-	image_io* image_tmp = new image_io(image_src);
+	image_io image_tmp(image_src);
 
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_LockSurface(image_tmp->get_image());
-	}
-
+	locker lock(image_src);
+	locker lock_tmp(image_tmp);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -406,8 +307,8 @@ void sobel_gradient(image_io* image_src) {
 	int gray_value_sum_x, gray_value_sum_y, gray_value_sum_xy;
 
 	// Iterate through every pixel, skip the outer edges
-	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+	for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
 			// Variable to hold the pixel average throughout the neighborhood
 			gray_value_sum_x = gray_value_sum_y = gray_value_sum_xy = 0;
 
@@ -424,11 +325,11 @@ void sobel_gradient(image_io* image_src) {
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
 				for (int v = -1; v + 1 < 3; v++) {
-					pixel_src = image_tmp->get_pixel(x + u, y + v);
+					pixel_src = image_tmp.get_pixel(x + u, y + v);
 
 					// Get the gray value of each pixel
 					gray_value = RGB_to_gray(pixel_src);
-					
+
 					// Iterate through the 9 pixels in the neighborhood
 					// Each has a weight determined by the Sobel mask
 					gray_value_sum_x += sobel_mask_x[(u + 1) + 3*(v + 1)]*gray_value;
@@ -442,42 +343,18 @@ void sobel_gradient(image_io* image_src) {
 			// Pack the color averages back into a single pixel
 			pixel_dst = pack_RGB(gray_value_sum_xy, gray_value_sum_xy, gray_value_sum_xy);
 
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_UnlockSurface(image_tmp->get_image());
-	}
-
-	// Free the temporary memory
-	delete image_tmp;
-
-
-	return;
 }
 
-
 // Edge detection using the Sobel Gradient
-void laplacian(image_io* image_src) {
+void laplacian(image_io& image_src) {
 	// Create a copy for use in algorithms
-	image_io* image_tmp = new image_io(image_src);
+	image_io image_tmp(image_src);
 
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_LockSurface(image_tmp->get_image());
-	}
-
+	locker lock(image_src);
+	locker lock_tmp(image_tmp);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -487,8 +364,8 @@ void laplacian(image_io* image_src) {
 	int gray_value_sum;
 
 	// Iterate through every pixel, skip the outer edges
-	for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+	for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
 			// Variable to hold the pixel average throughout the neighborhood
 			gray_value_sum = 0;
 
@@ -500,11 +377,11 @@ void laplacian(image_io* image_src) {
 			// Iterate through the neighborhood
 			for (int u = -1; u + 1 < 3; u++) {
 				for (int v = -1; v + 1 < 3; v++) {
-					pixel_src = image_tmp->get_pixel(x + u, y + v);
+					pixel_src = image_tmp.get_pixel(x + u, y + v);
 
 					// Get the gray value of each pixel
 					gray_value = RGB_to_gray(pixel_src);
-					
+
 					// Iterate through the 9 pixels in the neighborhood
 					gray_value_sum += laplacian_mask[(u + 1) + 3*(v + 1)]*gray_value;
 				}
@@ -513,37 +390,16 @@ void laplacian(image_io* image_src) {
 			// Pack the color averages back into a single pixel
 			pixel_dst = pack_RGB(gray_value_sum, gray_value_sum, gray_value_sum);
 
-			image_src->put_pixel(x, y, pixel_dst); 
+			image_src.put_pixel(x, y, pixel_dst);
 		}
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_tmp->get_image())) {
-		SDL_UnlockSurface(image_tmp->get_image());
-	}
-
-	// Free the temporary memory
-	delete image_tmp;
-
-
-	return;
 }
-
 
 // Degrade the image by n pixels
 // Erodes away black objects
 // Doesn't like pngs created by MS Paint
-void erosion(image_io* image_src, int erode_n) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+void erosion(image_io& image_src, int erode_n) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -553,27 +409,22 @@ void erosion(image_io* image_src, int erode_n) {
 
 	for (int n = 0; n < erode_n; n++) {
 		// Create a copy for use in algorithms
-		image_io* image_tmp = new image_io(image_src);
-
-		// Lock the image
-		if (SDL_MUSTLOCK(image_tmp->get_image())) {
-			SDL_LockSurface(image_tmp->get_image());
-		}
-
+		image_io image_tmp(image_src);
+		locker lock_tmp(image_tmp);
 
 		// Iterate through every pixel, skip the outer edges
-		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-			for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
+		for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+			for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
 				erode_flag = 0;
 
 				// Iterate through the neighborhood
 				for (int u = -1; u + 1 < 3; u++) {
 					for (int v = -1; v + 1 < 3; v++) {
-						pixel_src = image_tmp->get_pixel(x + u, y + v);
+						pixel_src = image_tmp.get_pixel(x + u, y + v);
 
 						// Get the gray value of each pixel
 						gray_value = RGB_to_gray(pixel_src);
-						
+
 						// If pixels in the neighborhood aren't black erode
 						if (gray_value != 0x00) {
 							erode_flag = 1;
@@ -584,44 +435,20 @@ void erosion(image_io* image_src, int erode_n) {
 				}
 
 				if (erode_flag) {
-					// Change this pixel to  white
+					// Change this pixel to white
 					pixel_dst = pack_RGB(0xFF, 0xFF, 0xFF);
 
-					image_src->put_pixel(x, y, pixel_dst); 
+					image_src.put_pixel(x, y, pixel_dst);
 				}
 			}
 		}
-
-
-		// Unlock the image
-		if (SDL_MUSTLOCK(image_tmp->get_image())) {
-			SDL_UnlockSurface(image_tmp->get_image());
-		}
-
-		// Free the temporary memory
-		delete image_tmp;
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-
-	return;
 }
 
-
-// Enlarge the iamge by n pixels
+// Enlarge the image by n pixels
 // Dilates black
-void dilation(image_io* image_src, int dilate_n) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+void dilation(image_io& image_src, int dilate_n) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_dst;
@@ -630,22 +457,16 @@ void dilation(image_io* image_src, int dilate_n) {
 
 	for (int n = 0; n < dilate_n; n++) {
 		// Create a copy for use in algorithms
-		image_io* image_tmp = new image_io(image_src);
-
-		// Lock the image
-		if (SDL_MUSTLOCK(image_tmp->get_image())) {
-			SDL_LockSurface(image_tmp->get_image());
-		}
-
+		image_io image_tmp(image_src);
+		locker lock_tmp(image_tmp);
 
 		// Iterate through every pixel, skip the outer edges
-		for (int x = 1; x < image_tmp->get_image()->w - 1; x++) {
-			for (int y = 1; y < image_tmp->get_image()->h - 1; y++) {
-				pixel_src = image_tmp->get_pixel(x, y);
+		for (int x = 1; x < image_tmp.get_image()->w - 1; x++) {
+			for (int y = 1; y < image_tmp.get_image()->h - 1; y++) {
+				pixel_src = image_tmp.get_pixel(x, y);
 
 				// Get the gray value of each pixel
 				gray_value = RGB_to_gray(pixel_src);
-
 
 				// Pack the color averages back into a single pixel
 				pixel_dst = pack_RGB(0x00, 0x00, 0x00);
@@ -655,48 +476,21 @@ void dilation(image_io* image_src, int dilate_n) {
 					for (int u = -1; u + 1 < 3; u++) {
 						for (int v = -1; v + 1 < 3; v++) {
 							// Fill in a 3x3 mask of pixels
-							image_src->put_pixel(x + u, y + v, pixel_dst); 
+							image_src.put_pixel(x + u, y + v, pixel_dst);
 						}
 					}
 				}
 			}
 		}
-
-
-		// Unlock the image
-		if (SDL_MUSTLOCK(image_tmp->get_image())) {
-			SDL_UnlockSurface(image_tmp->get_image());
-		}
-
-		// Free the temporary memory
-		delete image_tmp;
 	}
-
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
-	return;
 }
 
-
 // Compute the perimeter
-int perimiter(image_io* image_src) {
+int perimiter(image_io& image_src) {
 	// Create a copy for use in algorithms
-	image_io* image_eroded = new image_io(image_src);
+	image_io image_eroded(image_src);
 
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-	// Lock the image
-	if (SDL_MUSTLOCK(image_eroded->get_image())) {
-		SDL_LockSurface(image_eroded->get_image());
-	}
-
+	locker lock(image_src);
 
 	// Erode the image, take difference between eroded and normal and sum
 	erosion(image_eroded, 1);
@@ -704,49 +498,30 @@ int perimiter(image_io* image_src) {
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, pixel_src_eroded;
 	Uint32 pixel_src_gray, pixel_src_gray_eroded;
-	int perimiter_sum = 0;
+	int perimeter_sum = 0;
 
 	// Iterate through every pixel, skip the outer edges
-	for (int x = 1; x < image_eroded->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_eroded->get_image()->h - 1; y++) {
-			pixel_src = image_src->get_pixel(x, y);
-			pixel_src_eroded = image_eroded->get_pixel(x, y);
-			
+	for (int x = 1; x < image_eroded.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_eroded.get_image()->h - 1; y++) {
+			pixel_src = image_src.get_pixel(x, y);
+			pixel_src_eroded = image_eroded.get_pixel(x, y);
+
 			pixel_src_gray = RGB_to_gray(pixel_src);
 			pixel_src_gray_eroded = RGB_to_gray(pixel_src_eroded);
 
 			// If pixels are different they must be part of the perimiter
 			if (abs(pixel_src_gray - pixel_src_gray_eroded)) {
-				perimiter_sum++;
+				perimeter_sum++;
 			}
 		}
 	}
 
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_eroded->get_image())) {
-		SDL_UnlockSurface(image_eroded->get_image());
-	}
-
-	// Free the temporary memory
-	delete image_eroded;
-
-
-	return perimiter_sum;
+	return perimeter_sum;
 }
 
-
 // Compute the area
-int area(image_io* image_src) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+int area(image_io& image_src) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src;
@@ -754,10 +529,10 @@ int area(image_io* image_src) {
 	int area_sum = 0;
 
 	// Iterate through every pixel
-	for (int x = 1; x < image_src->get_image()->w - 1; x++) {
-		for (int y = 1; y < image_src->get_image()->h - 1; y++) {
-			pixel_src = image_src->get_pixel(x, y);
-			
+	for (int x = 1; x < image_src.get_image()->w - 1; x++) {
+		for (int y = 1; y < image_src.get_image()->h - 1; y++) {
+			pixel_src = image_src.get_pixel(x, y);
+
 			pixel_src_gray = RGB_to_gray(pixel_src);
 
 			// If a pixel is black, add it to the sum
@@ -767,25 +542,13 @@ int area(image_io* image_src) {
 		}
 	}
 
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
 	return area_sum;
 }
 
-
 // Compute the moments
 // Mij = ExEy x^i*y^j*I(x, y)
-double** moment(image_io* image_src) {
-	// Lock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_LockSurface(image_src->get_image());
-	}
-
+std::array<std::array<double, 4>, 4> moment(image_io& image_src) {
+	locker lock(image_src);
 
 	// Holds pixel data for reading and writing
 	Uint32 pixel_src, gray_value;
@@ -793,16 +556,12 @@ double** moment(image_io* image_src) {
 	// Need to compute M00, M01, M02, M03
 	// M10, M20, M30
 	// M11, M12, M21
-	double** M = new double*[4];
-	for (int i = 0; i < 4; i++) {
-		// double[4]() initializes values to zero
-		M[i] = new double[4]();
-	}
+	std::array<std::array<double, 4>, 4> M = {0};
 
 	// Iterate through every pixel
-	for (int x = 0; x < image_src->get_image()->w; x++) {
-		for (int y = 0; y < image_src->get_image()->h; y++) {
-			pixel_src = image_src->get_pixel(x, y);
+	for (int x = 0; x < image_src.get_image()->w; x++) {
+		for (int y = 0; y < image_src.get_image()->h; y++) {
+			pixel_src = image_src.get_pixel(x, y);
 
 			// Get the gray value of each pixel
 			// Subtract from 255 to moments of the black pixels
@@ -821,23 +580,15 @@ double** moment(image_io* image_src) {
 		}
 	}
 
-
-	// Unlock the image
-	if (SDL_MUSTLOCK(image_src->get_image())) {
-		SDL_UnlockSurface(image_src->get_image());
-	}
-
-
 	return M;
 }
-
 
 // Compute the centroid from the moment
 // Returns an array of two (x, y)
 // M is a 4x4 matrix containing values of the moments
-double* centroid(double** M) {
+std::array<double, 2> centroid(const std::array<std::array<double, 4>, 4>& M) {
 	// Allocate memory for the centroid value
-	double* C =  new double[2];
+	std::array<double, 2> C = {0};
 
 	// Compute the x and y components of the centroid
 	C[0] = M[1][0]/M[0][0];
@@ -846,16 +597,11 @@ double* centroid(double** M) {
 	return C;
 }
 
-
 // Compute the central_moments
 // Returns an array of the central moments
-double** central_moments(double** M, double* C) {
+std::array<std::array<double, 4>, 4> central_moments(const std::array<std::array<double, 4>, 4>& M, const std::array<double, 2>& C) {
 	// u represents the greek letter mu
-	double** u = new double*[4];
-	for (int i = 0; i < 4; i++) {
-		// double[4]() initializes values to zero
-		u[i] = new double[4]();
-	}
+	std::array<std::array<double, 4>, 4> u = {0};
 
 	u[0][0] = M[0][0];
 	u[0][2] = M[0][2] - C[1]*M[0][1];
@@ -866,17 +612,15 @@ double** central_moments(double** M, double* C) {
 	u[1][2] = M[1][2] - 2*C[1]*M[1][1] - C[0]*M[0][2] + 2*C[1]*C[1]*M[1][0];
 	u[2][1] = M[2][1] - 2*C[0]*M[1][1] - C[1]*M[2][0] + 2*C[0]*C[0]*M[0][1];
 
-
 	return u;
 }
 
-
 // Calculate the 7 moment invariants
 // u is a 4x4 matrix containing central moment values
-double* invariants(double** u) {
+std::array<double, 7> invariants(const std::array<std::array<double, 4>, 4>& u) {
 	// n represents the greek letter eta
 	double n[4][4];
-	double* invariants = new double[7];
+	std::array<double, 7> invariants = {0};
 
 	// eta_ij = u_ij/(pow(u_00, 1 + (i + j)/2))
 	n[0][2] = u[0][2]/(pow(u[0][0], 2));
@@ -923,23 +667,16 @@ double* invariants(double** u) {
 				* (3*(n[3][0] + n[1][2])*(n[3][0] + n[1][2])
 				- ((n[2][1] + n[0][3])*(n[2][1] + n[0][3])));
 
-
 	return invariants;
 }
 
-
 // Calculate the eigenvalues and eigenvectors of the covariance matrix
-double** eigen(double** M, double* C) {
+std::array<std::array<double, 2>, 3> eigen(const std::array<std::array<double, 4>, 4>& M, const std::array<double, 2>& C) {
 	double A[2][2];
 	double T, D;
 	double up20, up02, up11;
 
-	// Allocate space for eigen results
-	double** eigen = new double*[2];
-	for (int i = 0; i < 2; i++) {
-		// double[2]() initializes values to zero
-		eigen[i] = new double[3]();
-	}
+	std::array<std::array<double, 2>, 3> eigen = {0};
 
 	// Calculate values for the covariance matrix
 	up20 = M[2][0]/M[0][0] - C[0]*C[0];
@@ -971,7 +708,8 @@ double** eigen(double** M, double* C) {
 		eigen[1][2] = A[1][0];
 
 	// If b isn't zero
-	} else if (A[0][1] != 0) {
+	}
+	else if (A[0][1] != 0) {
 		// (b, L1 - a)
 		eigen[0][1] = A[0][1];
 		eigen[0][2] = eigen[0][0] - A[0][0];
@@ -979,18 +717,17 @@ double** eigen(double** M, double* C) {
 		// (b, L2 - a)
 		eigen[1][1] = A[0][1];
 		eigen[1][2] = eigen[1][0] - A[0][0];
-	} else {
+	}
+	else {
 		eigen[0][1] = 1;
 		eigen[0][2] = 0;
 
 		eigen[1][1] = 0;
 		eigen[1][2] = 1;
 	}
-	
-	
+
 	return eigen;
 }
-
 
 // Convert from RGB pixel format to gray value
 // gray_value = (0.299*r + 0.587*g + 0.114*b);
@@ -1000,16 +737,13 @@ Uint8 RGB_to_gray(Uint32 RGB_pixel) {
 					+ .587*((RGB_pixel >> 8) & 0xFF)
 					+ .114*((RGB_pixel >> 16) & 0xFF);
 
-
 	return gray_value;
 }
-
 
 // Return the color components
 Uint8 RGB_to_red(Uint32 RGB_pixel) { return ((RGB_pixel >> 0) & 0xFF); }
 Uint8 RGB_to_green(Uint32 RGB_pixel) { return ((RGB_pixel >> 8) & 0xFF); }
 Uint8 RGB_to_blue(Uint32 RGB_pixel) { return ((RGB_pixel >> 16) & 0xFF); }
-
 
 // Takes red/green/blue values and packs it back into RGB representation
 // Cast to a 32-bit int so the bit shifts don't shift off into nothing
@@ -1018,7 +752,6 @@ Uint32 pack_RGB(Uint8 red_value, Uint8 green_value, Uint8 blue_value) {
 	Uint32 RGB_pixel = (((Uint32) red_value) << 0)
 					| (((Uint32) green_value) << 8)
 					| (((Uint32) blue_value) << 16);
-
 
 	return RGB_pixel;
 }
